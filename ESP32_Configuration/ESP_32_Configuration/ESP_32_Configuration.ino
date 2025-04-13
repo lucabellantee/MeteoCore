@@ -45,21 +45,23 @@
    Serial.println("");
    Serial.println("WiFi connesso");
    Serial.println("Indirizzo IP: " + WiFi.localIP().toString());
- }
+ } 
  
  void loop() {
    // Leggi i dati dalla porta seriale
+   Serial.println(Serial2.available());
    while (Serial2.available()) {
      char c = Serial2.read();
+     Serial.println(c);  // Dovresti aggiungere una riga per stampare i dati ricevuti
      receivedData += c;
-     
+     //Serial.println("Carattere/i:   " + c); // Messaggio per fare DEBUG
      // Se troviamo un newline, i dati sono pronti per essere elaborati
      if (c == '\n') {
        dataReady = true;
        break;
      }
    }
-   
+
    // Elabora i dati ricevuti
    if (dataReady) {
      Serial.println("Dati ricevuti: " + receivedData);
