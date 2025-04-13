@@ -14,7 +14,7 @@
  const char* password = "luca2303";   // Sostituisci con la password della tua rete WiFi
  
  // Configurazione del server
- const char* serverUrl = "http://192.168.56.1:3000/api/data";  // Sostituisci con l'URL del tuo server
+ const char* serverUrl = "http://192.168.83.5:3000/api/data";  // Sostituisci con l'URL del tuo server
  
  // Configurazione UART
  #define RXD2 16  // Pin RX dell'ESP32 connesso al TX dell'STM32
