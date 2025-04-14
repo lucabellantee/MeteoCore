@@ -1,0 +1,14 @@
+/dts-v1/;
+
+/ {
+	aliases {
+		uart1 = &uart1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <17>;
+	rx-pin = <16>;
+};
