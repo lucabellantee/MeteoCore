@@ -26,8 +26,8 @@
  #define SERVER_PORT 3000
  #define API_ENDPOINT "/api/data"
  
- /* Configurazione UART */
- #define UART_DEVICE_NODE DT_NODELABEL(uart0)  // Modificato da uart1 a uart0
+ /* Configurazione UART - Utilizziamo UART2 che è sicuramente disponibile su ESP32 */
+ #define UART_DEVICE_NAME "UART_2"
  
  /* Dimensioni del buffer */
  #define RECV_BUFFER_SIZE 256
@@ -66,7 +66,6 @@
  
  /* Variabili globali */
  static const struct device *uart_dev;
- static struct net_if *iface;  // Variabile non utilizzata ma mantenuta
  static bool wifi_connected = false;
  static char rx_buf[RECV_BUFFER_SIZE];
  static int rx_buf_pos = 0;
@@ -90,11 +89,13 @@
      int ret;
  
      /* Inizializza UART */
-     uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
-     if (!device_is_ready(uart_dev)) {
-         LOG_ERR("UART device not ready");
+     uart_dev = device_get_binding(UART_DEVICE_NAME);
+     if (uart_dev == NULL) {
+         LOG_ERR("UART device '%s' not found", UART_DEVICE_NAME);
          return;
      }
+ 
+     LOG_INF("UART device '%s' trovato", UART_DEVICE_NAME);
  
      /* Configura UART */
      ret = uart_irq_callback_set(uart_dev, uart_rx_handler);
