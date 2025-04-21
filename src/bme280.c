@@ -25,7 +25,7 @@
  #define BME280_REG_HUM_LSB      0xFE
  
  /* Valori del chip ID */
- #define BME280_CHIP_ID          0x60
+ #define BME280_CHIP_ID          0x60  // Alcuni moduli potrebbero usare 0x60 o 0x61
  
  /* Parametri di calibrazione */
  struct bme280_calib_param {
@@ -64,7 +64,11 @@
   */
  static int bme280_read_reg(const struct device *i2c_dev, uint8_t reg, uint8_t *data)
  {
-     return i2c_reg_read_byte(i2c_dev, BME280_I2C_ADDR, reg, data);
+     int ret = i2c_reg_read_byte(i2c_dev, BME280_I2C_ADDR, reg, data);
+     if (ret != 0) {
+         LOG_ERR("Errore di lettura, registro 0x%02x, ret: %d", reg, ret);
+     }
+     return ret;
  }
  
  /**
@@ -72,7 +76,11 @@
   */
  static int bme280_write_reg(const struct device *i2c_dev, uint8_t reg, uint8_t value)
  {
-     return i2c_reg_write_byte(i2c_dev, BME280_I2C_ADDR, reg, value);
+     int ret = i2c_reg_write_byte(i2c_dev, BME280_I2C_ADDR, reg, value);
+     if (ret != 0) {
+         LOG_ERR("Errore di scrittura, registro 0x%02x, valore 0x%02x, ret: %d", reg, value, ret);
+     }
+     return ret;
  }
  
  /**
@@ -197,18 +205,35 @@
  {
      uint8_t chip_id;
      
+     LOG_INF("Inizializzazione BME280 all'indirizzo 0x%02x", BME280_I2C_ADDR);
+     
      if (!device_is_ready(i2c_dev)) {
          LOG_ERR("Dispositivo I2C non pronto");
          return false;
      }
      
+     /* Test semplice I2C */
+     LOG_INF("Inizio scansione dispositivi I2C...");
+     for (uint8_t addr = 1; addr < 128; addr++) {
+         uint8_t dummy = 0;
+         int result = i2c_write(i2c_dev, &dummy, 0, addr);
+         if (result == 0) {
+             LOG_INF("Trovato dispositivo I2C all'indirizzo: 0x%02x", addr);
+         }
+     }
+     LOG_INF("Scansione I2C completata");
+     
      /* Verifica l'ID del chip */
-     if (bme280_read_reg(i2c_dev, BME280_REG_ID, &chip_id) != 0) {
-         LOG_ERR("Impossibile leggere l'ID del chip");
+     int ret = bme280_read_reg(i2c_dev, BME280_REG_ID, &chip_id);
+     if (ret != 0) {
+         LOG_ERR("Impossibile leggere l'ID del chip, errore: %d", ret);
          return false;
      }
      
-     if (chip_id != BME280_CHIP_ID) {
+     LOG_INF("Letto chip ID: 0x%02x, aspettato: 0x%02x", chip_id, BME280_CHIP_ID);
+     
+     /* Accetta sia 0x60 che 0x61 come ID validi */
+     if (chip_id != BME280_CHIP_ID && chip_id != 0x61) {
          LOG_ERR("ID del chip non valido: 0x%02x", chip_id);
          return false;
      }

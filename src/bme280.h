@@ -11,7 +11,7 @@
  #include <stdbool.h>
  
  /** Indirizzo I2C predefinito del BME280 */
- #define BME280_I2C_ADDR 0x76  // Indirizzo alternativo: 0x77
+ #define BME280_I2C_ADDR 0x76 // Deve corrispondere all'indirizzo nel file overlay
  
  /** Struttura per i dati del sensore */
  typedef struct {
