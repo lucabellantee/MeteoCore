@@ -1,0 +1,4 @@
+west:
+  command: C:\Users\lucab\zephyrproject\.venv\Scripts\west build -b nucleo_f446re
+  topdir: C:\Users\lucab\zephyrproject
+  version: 1.3.0

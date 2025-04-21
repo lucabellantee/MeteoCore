@@ -8,10 +8,13 @@
 &i2c1 {
     status = "okay";
     clock-frequency = <I2C_BITRATE_STANDARD>;
-    bme280@76 {
+    pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+    scl-gpios = <&gpiob 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+    sda-gpios = <&gpiob 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+    
+    bme280@77 {
         compatible = "bosch,bme280";
-        reg = <0x76>;
-        label = "BME280";
+        reg = <0x77>;
     };
 };
 
