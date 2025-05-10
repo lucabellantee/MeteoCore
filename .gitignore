@@ -1,1 +1,4 @@
 CMakeLists.txt
+secrets.h
+.env
+zephyr-env.cmd
