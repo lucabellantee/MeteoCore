@@ -8,13 +8,14 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "secrets.h"
 
 // Configurazione WiFi
-const char* ssid = "luca";           // Sostituisci con il nome della tua rete WiFi
-const char* password = "luca2303";   // Sostituisci con la password della tua rete WiFi
+const char* ssid = WIFI_ID;           // Sostituisci con il nome della tua rete WiFi
+const char* password = WIFI_PASSWORD;   // Sostituisci con la password della tua rete WiFi
 
 // Configurazione ThingSpeak
-const char* thingSpeakApiKey = "IGAO8J9R7YJY2G6D";  // <-- Sostituisci con la tua Write API Key
+const char* thingSpeakApiKey = THING_SPEAK_API;  // <-- Sostituisci con la tua Write API Key
 
 // UART
 #define RXD2 16
