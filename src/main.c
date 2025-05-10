@@ -82,7 +82,7 @@
      
      
      /* Ottieni il dispositivo I2C */
-     i2c_dev = DEVICE_DT_GET(DT_ALIAS(i2c0));
+     i2c_dev = DEVICE_DT_GET(DT_ALIAS(i2c1));
      if (!device_is_ready(i2c_dev)) {
          LOG_ERR("Dispositivo I2C non disponibile");
          return;

@@ -202,77 +202,63 @@
  }
  
  bool bme280_init(const struct device *i2c_dev)
- {
-     uint8_t chip_id;
-     
-     LOG_INF("Inizializzazione BME280 all'indirizzo 0x%02x", BME280_I2C_ADDR);
-     
-     if (!device_is_ready(i2c_dev)) {
-         LOG_ERR("Dispositivo I2C non pronto");
-         return false;
-     }
-     
-     /* Test semplice I2C */
-     LOG_INF("Inizio scansione dispositivi I2C...");
-     for (uint8_t addr = 1; addr < 128; addr++) {
-         uint8_t dummy = 0;
-         int result = i2c_write(i2c_dev, &dummy, 0, addr);
-         if (result == 0) {
-             LOG_INF("Trovato dispositivo I2C all'indirizzo: 0x%02x", addr);
-         }
-     }
-     LOG_INF("Scansione I2C completata");
-     
-     /* Verifica l'ID del chip */
-     int ret = bme280_read_reg(i2c_dev, BME280_REG_ID, &chip_id);
-     if (ret != 0) {
-         LOG_ERR("Impossibile leggere l'ID del chip, errore: %d", ret);
-         return false;
-     }
-     
-     LOG_INF("Letto chip ID: 0x%02x, aspettato: 0x%02x", chip_id, BME280_CHIP_ID);
-     
-     /* Accetta sia 0x60 che 0x61 come ID validi */
-     if (chip_id != BME280_CHIP_ID && chip_id != 0x61) {
-         LOG_ERR("ID del chip non valido: 0x%02x", chip_id);
-         return false;
-     }
-     
-     /* Reset del sensore */
-     if (bme280_write_reg(i2c_dev, BME280_REG_RESET, 0xB6) != 0) {
-         LOG_ERR("Impossibile resettare il sensore");
-         return false;
-     }
-     
-     /* Attesa per il completamento del reset */
-     k_sleep(K_MSEC(10));
-     
-     /* Legge i parametri di calibrazione */
-     if (!read_calibration_data(i2c_dev)) {
-         return false;
-     }
-     
-     /* Configura l'oversampling per umidità */
-     if (bme280_write_reg(i2c_dev, BME280_REG_CTRL_HUM, 0x01) != 0) {
-         LOG_ERR("Impossibile configurare CTRL_HUM");
-         return false;
-     }
-     
-     /* Configura l'oversampling per temperatura e pressione e modalità operativa */
-     if (bme280_write_reg(i2c_dev, BME280_REG_CTRL_MEAS, 0x27) != 0) {
-         LOG_ERR("Impossibile configurare CTRL_MEAS");
-         return false;
-     }
-     
-     /* Configura il rate di standby e filtro */
-     if (bme280_write_reg(i2c_dev, BME280_REG_CONFIG, 0x00) != 0) {
-         LOG_ERR("Impossibile configurare CONFIG");
-         return false;
-     }
-     
-     LOG_INF("Sensore BME280 inizializzato correttamente");
-     return true;
- }
+{
+    if (!device_is_ready(i2c_dev)) {
+        LOG_ERR("Dispositivo I2C non pronto");
+        return false;
+    }
+
+    LOG_INF("Scansione generale del bus I2C...");
+
+    for (uint8_t addr = 0x76; addr <= 0x77; addr++) {  // Indirizzi I2C tipici per BME280
+        uint8_t dummy = 0;
+        struct i2c_msg msg = {
+            .buf = &dummy,
+            .len = 1,
+            .flags = I2C_MSG_WRITE,
+        };
+
+        // Verifica se il dispositivo risponde
+        int ret = i2c_transfer(i2c_dev, &msg, 1, addr);
+        if (ret == 0) {
+            LOG_INF("Dispositivo trovato all'indirizzo 0x%02X", addr);
+
+            // Verifica se il dispositivo è un BME280
+            uint8_t chip_id_reg = 0xD0;  // Registro dell'ID del chip
+            uint8_t chip_id = 0;
+            struct i2c_msg chip_id_msg[2] = {
+                {
+                    .buf = &chip_id_reg,
+                    .len = 1,
+                    .flags = I2C_MSG_WRITE,
+                },
+                {
+                    .buf = &chip_id,
+                    .len = 1,
+                    .flags = I2C_MSG_READ | I2C_MSG_STOP,
+                }
+            };
+
+            int ret_chip_id = i2c_transfer(i2c_dev, chip_id_msg, 2, addr);
+            if (ret_chip_id == 0) {
+                LOG_INF("Chip ID del dispositivo all'indirizzo 0x%02X: 0x%02X", addr, chip_id);
+                if (chip_id == 0x60) {  // ID del chip BME280
+                    LOG_INF("Dispositivo BME280 trovato all'indirizzo 0x%02X", addr);
+                    return true;  // Sensore trovato, ritorna true
+                } else {
+                    LOG_INF("Il chip trovato all'indirizzo 0x%02X non è un BME280", addr);
+                }
+            } else {
+                LOG_ERR("Errore nella lettura del Chip ID all'indirizzo 0x%02X", addr);
+            }
+        }
+    }
+
+    LOG_ERR("Nessun sensore BME280 trovato su indirizzi 0x76 o 0x77.");
+    return false;  // Nessun sensore trovato o errore di comunicazione
+}
+
+
  
  bool bme280_read_data(const struct device *i2c_dev, bme280_data_t *data)
  {

@@ -1,16 +1,16 @@
 / {
     aliases {
-        i2c0 = &i2c1;
+        i2c1 = &i2c2;
         uart1 = &usart1;
     };
 };
 
-&i2c1 {
+&i2c2 {
     status = "okay";
-
-    bme280@76 {
+    clock-frequency = <100000>;  // 100 kHz
+    bme280@77 {
         compatible = "bosch,bme280";
-        reg = <0x76>;
+        reg = <0x77>;
     };
 };
 
