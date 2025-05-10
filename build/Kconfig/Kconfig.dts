@@ -3162,6 +3162,41 @@ DT_COMPAT_ITE_ENHANCE_I2C := ite,enhance-i2c
 config DT_HAS_ITE_ENHANCE_I2C_ENABLED
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_ENHANCE_I2C))
 
+DT_COMPAT_ITE_IT51XXX_ECPM := ite,it51xxx-ecpm
+
+config DT_HAS_ITE_IT51XXX_ECPM_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT51XXX_ECPM))
+
+DT_COMPAT_ITE_IT51XXX_GPIO := ite,it51xxx-gpio
+
+config DT_HAS_ITE_IT51XXX_GPIO_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT51XXX_GPIO))
+
+DT_COMPAT_ITE_IT51XXX_INTC := ite,it51xxx-intc
+
+config DT_HAS_ITE_IT51XXX_INTC_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT51XXX_INTC))
+
+DT_COMPAT_ITE_IT51XXX_TIMER := ite,it51xxx-timer
+
+config DT_HAS_ITE_IT51XXX_TIMER_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT51XXX_TIMER))
+
+DT_COMPAT_ITE_IT51XXX_UART := ite,it51xxx-uart
+
+config DT_HAS_ITE_IT51XXX_UART_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT51XXX_UART))
+
+DT_COMPAT_ITE_IT51XXX_WUC := ite,it51xxx-wuc
+
+config DT_HAS_ITE_IT51XXX_WUC_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT51XXX_WUC))
+
+DT_COMPAT_ITE_IT51XXX_WUC_MAP := ite,it51xxx-wuc-map
+
+config DT_HAS_ITE_IT51XXX_WUC_MAP_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT51XXX_WUC_MAP))
+
 DT_COMPAT_ITE_IT82XX2_USB := ite,it82xx2-usb
 
 config DT_HAS_ITE_IT82XX2_USB_ENABLED
@@ -3206,6 +3241,11 @@ DT_COMPAT_ITE_IT8XXX2_BBRAM := ite,it8xxx2-bbram
 
 config DT_HAS_ITE_IT8XXX2_BBRAM_ENABLED
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT8XXX2_BBRAM))
+
+DT_COMPAT_ITE_IT8XXX2_COUNTER := ite,it8xxx2-counter
+
+config DT_HAS_ITE_IT8XXX2_COUNTER_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ITE_IT8XXX2_COUNTER))
 
 DT_COMPAT_ITE_IT8XXX2_ESPI := ite,it8xxx2-espi
 
@@ -4616,6 +4656,11 @@ DT_COMPAT_NORDIC_NRF_LPCOMP := nordic,nrf-lpcomp
 
 config DT_HAS_NORDIC_NRF_LPCOMP_ENABLED
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_LPCOMP))
+
+DT_COMPAT_NORDIC_NRF_MPC := nordic,nrf-mpc
+
+config DT_HAS_NORDIC_NRF_MPC_ENABLED
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MPC))
 
 DT_COMPAT_NORDIC_NRF_MPU := nordic,nrf-mpu
 

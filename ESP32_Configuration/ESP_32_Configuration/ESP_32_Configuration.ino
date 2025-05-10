@@ -1,8 +1,9 @@
 /**
  * ESP32 Weather Station - Ricevitore dati da STM32 e invio al database
  * 
- * Questo sketch riceve dati meteorologici via UART dall'STM32
- * e li invia a un database tramite WiFi.
+ * Questo sketch riceve dati meteorologici via UART dall'STM32, li parsa come JSON, li stampa in seriale e 
+ * e li invia tramite HTTP POST  a un server remoto (database) tramite la connessione WiFi.
+ * 
  */
 
  #include <WiFi.h>
@@ -14,9 +15,9 @@
  const char* password = "luca2303";   // Sostituisci con la password della tua rete WiFi
  
  // Configurazione del server
- const char* serverUrl = "http://192.168.83.5:3000/api/data";  // Sostituisci con l'URL del tuo server
+ const char* serverUrl = "http://192.168.63.121:3000/api/data";  // Sostituisci con l'URL del tuo server
  
- // Configurazione UART
+ // Configurazione dei pin fisici che l'ESP32 userà per comunicare via UART (seriale) con la scheda STM32.
  #define RXD2 16  // Pin RX dell'ESP32 connesso al TX dell'STM32
  #define TXD2 17  // Pin TX dell'ESP32 connesso al RX dell'STM32
  
@@ -32,8 +33,8 @@
    // Inizializza Serial2 per la comunicazione con STM32
    Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
    
-   // Connessione WiFi
-   WiFi.begin(ssid, password);
+   // Connette l’ESP32 alla rete WiFi usando SSID e password specificati.
+   WiFi.begin(ssid, password); 
    Serial.print("Connessione al WiFi");
    
    // Attendi la connessione
@@ -52,7 +53,7 @@
    Serial.println(Serial2.available());
    while (Serial2.available()) {
      char c = Serial2.read();
-     Serial.println(c);  // Dovresti aggiungere una riga per stampare i dati ricevuti
+     //Serial.println(c);  // Dovresti aggiungere una riga per stampare i dati ricevuti
      receivedData += c;
      //Serial.println("Carattere/i:   " + c); // Messaggio per fare DEBUG
      // Se troviamo un newline, i dati sono pronti per essere elaborati

@@ -1,2 +1,2 @@
 # Load board Kconfig descriptions.
-osource "C:/Users/lucab/zephyrproject/zephyr/boards/st/nucleo_f446re/Kconfig.nucleo_f446re"
+osource "C:/zephyrproject/zephyr/boards/st/nucleo_f446re/Kconfig.nucleo_f446re"

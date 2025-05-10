@@ -4,35 +4,35 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineSystem.cmake:200 (message)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineSystem.cmake:200 (message)"
+      - "C:/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
+      - "C:/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
       - "CMakeLists.txt:3 (find_package)"
     message: |
       The target system is: Generic - 4.1.99 - arm
-      The host system is: Windows - 10.0.19045 - AMD64
+      The host system is: Windows - 10.0.26100 - AMD64
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "C:/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
+      - "C:/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
       - "CMakeLists.txt:3 (find_package)"
     message: |
       Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
-      Compiler: C:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe 
+      Compiler: C:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe 
       Build flags: 
       Id flags:  
       
       The output was:
       1
-      c:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/../../../../arm-zephyr-eabi/bin/ld.exe: c:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/../../../../arm-zephyr-eabi/lib\\libc.a(lib_a-exit.o): in function `exit':
+      c:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/../../../../arm-zephyr-eabi/bin/ld.exe: c:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/../../../../arm-zephyr-eabi/lib\\libc.a(lib_a-exit.o): in function `exit':
       exit.c:(.text.exit+0x34): undefined reference to `_exit'
       collect2.exe: error: ld returned 1 exit status
       
@@ -40,17 +40,17 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "C:/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
+      - "C:/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
       - "CMakeLists.txt:3 (find_package)"
     message: |
       Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
-      Compiler: C:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe 
+      Compiler: C:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe 
       Build flags: 
       Id flags: -c 
       
@@ -61,28 +61,28 @@ events:
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.o"
       
       The C compiler identification is GNU, found in:
-        C:/Users/lucab/OneDrive/Desktop/Ingegneria/Magistrale/Weather_Prediction/build/CMakeFiles/4.0.0/CompilerIdC/CMakeCCompilerId.o
+        C:/Users/Micol/Desktop/Projects/weatherPrediction/Weather_Prediction/build/CMakeFiles/4.0.0/CompilerIdC/CMakeCCompilerId.o
       
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "C:/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
+      - "C:/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
       - "CMakeLists.txt:3 (find_package)"
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
-      Compiler: C:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe 
+      Compiler: C:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe 
       Build flags: 
       Id flags:  
       
       The output was:
       1
-      c:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/../../../../arm-zephyr-eabi/bin/ld.exe: c:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/../../../../arm-zephyr-eabi/lib\\libc.a(lib_a-exit.o): in function `exit':
+      c:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/../../../../arm-zephyr-eabi/bin/ld.exe: c:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/../../../../arm-zephyr-eabi/lib\\libc.a(lib_a-exit.o): in function `exit':
       exit.c:(.text.exit+0x34): undefined reference to `_exit'
       collect2.exe: error: ld returned 1 exit status
       
@@ -90,17 +90,17 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "C:/zephyrproject/zephyr/cmake/modules/kernel.cmake:128 (project)"
+      - "C:/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
       - "CMakeLists.txt:3 (find_package)"
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
-      Compiler: C:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe 
+      Compiler: C:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc.exe 
       Build flags: 
       Id flags: -c 
       
@@ -111,21 +111,21 @@ events:
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.o"
       
       The CXX compiler identification is GNU, found in:
-        C:/Users/lucab/OneDrive/Desktop/Ingegneria/Magistrale/Weather_Prediction/build/CMakeFiles/4.0.0/CompilerIdCXX/CMakeCXXCompilerId.o
+        C:/Users/Micol/Desktop/Projects/weatherPrediction/Weather_Prediction/build/CMakeFiles/4.0.0/CompilerIdCXX/CMakeCXXCompilerId.o
       
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:1230 (message)"
-      - "C:/Users/lucab/AppData/Roaming/Python/Python312/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineASMCompiler.cmake:139 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/kernel.cmake:134 (enable_language)"
-      - "C:/Users/lucab/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
-      - "C:/Users/lucab/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineCompilerId.cmake:1230 (message)"
+      - "C:/zephyrproject/.venv/Lib/site-packages/cmake/data/share/cmake-4.0/Modules/CMakeDetermineASMCompiler.cmake:139 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "C:/zephyrproject/zephyr/cmake/modules/kernel.cmake:134 (enable_language)"
+      - "C:/zephyrproject/zephyr/cmake/modules/zephyr_default.cmake:140 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:66 (include)"
+      - "C:/zephyrproject/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake:97 (include_boilerplate)"
       - "CMakeLists.txt:3 (find_package)"
     message: |
       Checking whether the ASM compiler is GNU using "--version" matched "(GNU assembler)|(GCC)|(Free Software Foundation)":
-      arm-zephyr-eabi-gcc.exe (Zephyr SDK 0.17.0) 12.2.0
+      arm-zephyr-eabi-gcc.exe (Zephyr SDK 0.17.1-rc1) 12.2.0
       Copyright (C) 2022 Free Software Foundation, Inc.
       This is free software; see the source for copying conditions.  There is NO
       warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

@@ -12,13 +12,13 @@ debug-runner: openocd
 
 # Common runner configuration values.
 config:
-  board_dir: C:/Users/lucab/zephyrproject/zephyr/boards/st/nucleo_f446re
+  board_dir: C:/zephyrproject/zephyr/boards/st/nucleo_f446re
   # Build outputs:
   elf_file: zephyr.elf
   hex_file: zephyr.hex
   bin_file: zephyr.bin
   # Host tools:
-  gdb: C:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb-py.exe
+  gdb: C:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb.exe
 
 # Runner specific arguments
 args:

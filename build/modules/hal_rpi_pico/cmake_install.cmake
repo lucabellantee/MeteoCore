@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/lucab/zephyrproject/zephyr/modules/hal_rpi_pico
+# Install script for directory: C:/zephyrproject/zephyr/modules/hal_rpi_pico
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,12 +34,12 @@ endif()
 
 # Set path to fallback-tool for dependency-resolution.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "C:/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump.exe")
+  set(CMAKE_OBJDUMP "C:/zephyr-sdk-0.17.1-rc1_windows-x86_64/zephyr-sdk-0.17.1-rc1/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump.exe")
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "C:/Users/lucab/OneDrive/Desktop/Ingegneria/Magistrale/Weather_Prediction/build/modules/hal_rpi_pico/install_local_manifest.txt"
+  file(WRITE "C:/Users/Micol/Desktop/Projects/weatherPrediction/Weather_Prediction/build/modules/hal_rpi_pico/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()
