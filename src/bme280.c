@@ -25,7 +25,7 @@
  #define BME280_REG_HUM_LSB      0xFE
  
  /* Valori del chip ID */
- #define BME280_CHIP_ID          0x60  // Alcuni moduli potrebbero usare 0x60 o 0x61
+ #define BME280_CHIP_ID          0x60
  
  /* Parametri di calibrazione */
  struct bme280_calib_param {
@@ -64,11 +64,7 @@
   */
  static int bme280_read_reg(const struct device *i2c_dev, uint8_t reg, uint8_t *data)
  {
-     int ret = i2c_reg_read_byte(i2c_dev, BME280_I2C_ADDR, reg, data);
-     if (ret != 0) {
-         LOG_ERR("Errore di lettura, registro 0x%02x, ret: %d", reg, ret);
-     }
-     return ret;
+     return i2c_reg_read_byte(i2c_dev, BME280_I2C_ADDR, reg, data);
  }
  
  /**
@@ -76,11 +72,7 @@
   */
  static int bme280_write_reg(const struct device *i2c_dev, uint8_t reg, uint8_t value)
  {
-     int ret = i2c_reg_write_byte(i2c_dev, BME280_I2C_ADDR, reg, value);
-     if (ret != 0) {
-         LOG_ERR("Errore di scrittura, registro 0x%02x, valore 0x%02x, ret: %d", reg, value, ret);
-     }
-     return ret;
+     return i2c_reg_write_byte(i2c_dev, BME280_I2C_ADDR, reg, value);
  }
  
  /**

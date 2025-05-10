@@ -13,7 +13,7 @@ app.post('/api/data', (req, res) => {
   res.status(200).send({ message: 'Dati ricevuti correttamente' });
 });
 
-app.listen(PORT, '192.168.63.5', () => {
-  console.log(`Server attivo su http://192.168.63.5:${PORT}`);
+app.listen(PORT, '192.168.63.121', () => {
+  console.log(`Server attivo su http://192.168.63.121:${PORT}`);
 });
 
