@@ -1,11 +1,11 @@
 / {
     aliases {
-        i2c1 = &i2c2;
+        i2c1 = &i2c1;
         uart1 = &usart1;
     };
 };
 
-&i2c2 {
+&i2c1 {
     status = "okay";
     clock-frequency = <100000>;  // 100 kHz
     bme280@77 {
