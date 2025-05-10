@@ -9,13 +9,14 @@
  #include <WiFi.h>
  #include <HTTPClient.h>
  #include <ArduinoJson.h>
+ #include <secrets.h>
  
  // Configurazione WiFi
- const char* ssid = "luca";       // Sostituisci con il nome della tua rete WiFi
- const char* password = "luca2303";   // Sostituisci con la password della tua rete WiFi
+ const char* ssid = WIFI_ID;      
+ const char* password = WIFI_PASSWORD;   
  
  // Configurazione del server
- const char* serverUrl = "http://192.168.63.121:3000/api/data";  // Sostituisci con l'URL del tuo server
+ const char* serverUrl = SERVER_URL;  
  
  // Configurazione dei pin fisici che l'ESP32 userà per comunicare via UART (seriale) con la scheda STM32.
  #define RXD2 16  // Pin RX dell'ESP32 connesso al TX dell'STM32
