@@ -58,13 +58,16 @@
  };
  
  static struct bme280_calib_param calib_data;
+
+ static uint8_t bme280_i2c_addr = 0x76;  // sarà aggiornato dinamicamente
+
  
  /**
   * @brief Legge un byte dal registro specificato
   */
  static int bme280_read_reg(const struct device *i2c_dev, uint8_t reg, uint8_t *data)
  {
-     return i2c_reg_read_byte(i2c_dev, BME280_I2C_ADDR, reg, data);
+     return i2c_reg_read_byte(i2c_dev, bme280_i2c_addr, reg, data);
  }
  
  /**
@@ -72,7 +75,7 @@
   */
  static int bme280_write_reg(const struct device *i2c_dev, uint8_t reg, uint8_t value)
  {
-     return i2c_reg_write_byte(i2c_dev, BME280_I2C_ADDR, reg, value);
+     return i2c_reg_write_byte(i2c_dev, bme280_i2c_addr, reg, value);
  }
  
  /**
@@ -83,7 +86,7 @@
      uint8_t buf[24];
      
      /* Legge i primi parametri di calibrazione (0x88-0x9F) */
-     if (i2c_burst_read(i2c_dev, BME280_I2C_ADDR, 0x88, buf, 24) != 0) {
+     if (i2c_burst_read(i2c_dev, bme280_i2c_addr, 0x88, buf, 24) != 0) {
          LOG_ERR("Impossibile leggere i parametri di calibrazione");
          return false;
      }
@@ -109,7 +112,7 @@
      }
      
      /* Legge i parametri di calibrazione dell'umidità */
-     if (i2c_burst_read(i2c_dev, BME280_I2C_ADDR, 0xE1, buf, 7) != 0) {
+     if (i2c_burst_read(i2c_dev, bme280_i2c_addr, 0xE1, buf, 7) != 0) {
          LOG_ERR("Impossibile leggere i parametri di calibrazione dell'umidità");
          return false;
      }
@@ -201,96 +204,101 @@
         return false;
     }
 
-    // Inizia con un ritardo
-    k_msleep(200);
-    
+    k_msleep(200);  // Stabilizzazione
+
     LOG_INF("Avvio scansione BME280...");
-    
-    // Test su entrambi gli indirizzi possibili
-    uint8_t device_addr = 0;
+
+    // Scansione su entrambi gli indirizzi possibili (0x76, 0x77)
     for (uint8_t addr = 0x76; addr <= 0x77; addr++) {
-        // Semplice controllo di presenza
         uint8_t dummy = 0;
         struct i2c_msg ping_msg = {
             .buf = &dummy,
-            .len = 0,  // Solo controllo indirizzo, nessun dato
+            .len = 0,
             .flags = I2C_MSG_WRITE,
         };
-        
+
         int ret = i2c_transfer(i2c_dev, &ping_msg, 1, addr);
         LOG_INF("Test indirizzo 0x%02X: %d", addr, ret);
-        
+
         if (ret == 0) {
-            device_addr = addr;
+            bme280_i2c_addr = addr;
             LOG_INF("Dispositivo risponde all'indirizzo 0x%02X", addr);
             break;
         }
     }
-    
-    if (device_addr == 0) {
+
+    if (bme280_i2c_addr == 0) {
         LOG_ERR("Nessun dispositivo I2C trovato agli indirizzi BME280");
         return false;
     }
-    
-    // Attesa
-    k_msleep(10);
-    
-    // Leggi l'ID separando le operazioni
+
+    k_msleep(10);  // Stabilizzazione
+
+    // Configurazione del sensore (aggiunta qui)
+    bme280_write_reg(i2c_dev, BME280_REG_CTRL_HUM, 0x01);     // Oversampling umidità x1
+    bme280_write_reg(i2c_dev, BME280_REG_CTRL_MEAS, 0x27);    // Temp x1, Press x1, modalità normale
+    bme280_write_reg(i2c_dev, BME280_REG_CONFIG, 0xA0);       // Standby 1000ms, filtro x4
+
     for (int attempt = 0; attempt < 5; attempt++) {
-        int success = false;
-        
-        // 1. Scrittura del registro ID
+        // 1. Scrittura indirizzo del registro ID
         uint8_t id_reg = 0xD0;
         struct i2c_msg write_msg = {
             .buf = &id_reg,
             .len = 1,
             .flags = I2C_MSG_WRITE | I2C_MSG_STOP,
         };
-        
+
         LOG_INF("Invio indirizzo registro ID 0xD0");
-        int write_ret = i2c_transfer(i2c_dev, &write_msg, 1, device_addr);
-        
+        int write_ret = i2c_transfer(i2c_dev, &write_msg, 1, bme280_i2c_addr);
+
         if (write_ret != 0) {
-            LOG_WRN("Errore scrittura registro ID: %d (tentativo %d)", write_ret, attempt+1);
+            LOG_WRN("Errore scrittura registro ID: %d (tentativo %d)", write_ret, attempt + 1);
             k_msleep(10);
             continue;
         }
-        
-        // Pausa tra operazioni
+
         k_msleep(10);
-        
-        // 2. Lettura del valore
+
+        // 2. Lettura del valore ID
         uint8_t chip_id = 0;
         struct i2c_msg read_msg = {
             .buf = &chip_id,
             .len = 1,
             .flags = I2C_MSG_READ | I2C_MSG_STOP,
         };
-        
+
         LOG_INF("Lettura valore ID");
-        int read_ret = i2c_transfer(i2c_dev, &read_msg, 1, device_addr);
-        
+        int read_ret = i2c_transfer(i2c_dev, &read_msg, 1, bme280_i2c_addr);
+
         if (read_ret != 0) {
-            LOG_WRN("Errore lettura ID: %d (tentativo %d)", read_ret, attempt+1);
+            LOG_WRN("Errore lettura ID: %d (tentativo %d)", read_ret, attempt + 1);
             k_msleep(10);
             continue;
         }
-        
+
         LOG_INF("Chip ID letto: 0x%02X", chip_id);
-        
+
         if (chip_id == 0x60) {
-            LOG_INF("BME280 confermato all'indirizzo 0x%02X!", device_addr);
+            LOG_INF("BME280 confermato all'indirizzo 0x%02X", bme280_i2c_addr);
+
+            // Lettura dei parametri di calibrazione
+            if (!read_calibration_data(i2c_dev)) {
+                LOG_ERR("Errore nella lettura dei parametri di calibrazione");
+                return false;
+            }
+
             return true;
         } else {
             LOG_WRN("ID non corrispondente a BME280 (0x%02X != 0x60)", chip_id);
         }
-        
+
         k_msleep(20);
     }
-    
+
     LOG_ERR("Impossibile identificare il BME280 dopo multipli tentativi");
     return false;
 }
+
 
  bool bme280_read_data(const struct device *i2c_dev, bme280_data_t *data)
  {
@@ -298,7 +306,7 @@
      int32_t adc_temp, adc_press, adc_hum;
      
      /* Legge i dati grezzi */
-     if (i2c_burst_read(i2c_dev, BME280_I2C_ADDR, BME280_REG_PRESS_MSB, buf, 8) != 0) {
+     if (i2c_burst_read(i2c_dev, bme280_i2c_addr, BME280_REG_PRESS_MSB, buf, 8) != 0) {
          LOG_ERR("Impossibile leggere i dati del sensore");
          return false;
      }

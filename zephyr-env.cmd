@@ -1,7 +1,7 @@
 @echo off
-set ZEPHYR_BASE=C:/Users/lucab/zephyrproject/zephyr 
+set ZEPHYR_BASE=C:/zephyrproject/zephyr 
 set ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-set ZEPHYR_SDK_INSTALL_DIR=C:\zephyr-sdk-0.17.0
+set ZEPHYR_SDK_INSTALL_DIR=C:\zephyr-sdk-0.17.1-rc1_windows-x86_64
 echo Ambiente Zephyr configurato!
 echo ZEPHYR_BASE = %ZEPHYR_BASE% 
 
