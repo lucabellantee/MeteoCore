@@ -54,9 +54,9 @@
    Serial.println(Serial2.available());
    while (Serial2.available()) {
      char c = Serial2.read();
-     //Serial.println(c);  // Dovresti aggiungere una riga per stampare i dati ricevuti
+     //Serial.println(c);
      receivedData += c;
-     //Serial.println("Carattere/i:   " + c); // Messaggio per fare DEBUG
+     //Serial.println("Carattere/i:   " + c);
      // Se troviamo un newline, i dati sono pronti per essere elaborati
      if (c == '\n') {
        dataReady = true;
