@@ -3,3 +3,4 @@ secrets.h
 .env
 zephyr-env.cmd
 /build
+node_modules/

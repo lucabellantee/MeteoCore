@@ -1,3 +1,13 @@
+"""
+Questo script esegue un'analisi esplorativa dei dati (EDA) sul dataset meteorologico
+con l'obiettivo di comprendere meglio la distribuzione delle classi e le correlazioni tra le variabili.
+Comprende:
+- Statistiche descrittive del dataset
+- Analisi della distribuzione delle classi nel target ("Rain Tomorrow")
+- Visualizzazione della distribuzione delle classi tramite un grafico a barre
+- Analisi della correlazione tra le variabili tramite una heatmap
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
