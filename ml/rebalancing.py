@@ -1,3 +1,10 @@
+"""
+Script di bilanciamento del dataset meteorologico tramite SMOTE (Synthetic Minority Over-sampling Technique), per evitare che il modello predittivo
+sia eccessivamente influenzato dalla classe maggioritaria.
+
+Output: un nuovo dataset CSV bilanciato, pronto per essere utilizzato nel training del modello.
+"""
+
 import pandas as pd
 from imblearn.over_sampling import SMOTE
 import matplotlib.pyplot as plt

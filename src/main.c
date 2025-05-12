@@ -148,7 +148,6 @@
  #include <zephyr/drivers/uart.h>
  #include <zephyr/logging/log.h>
  #include <stdlib.h>  // Per rand()
- 
  #include "bme280.h"
  #include "rain_model.h"
  #include "esp32_comm.h"

@@ -11,11 +11,11 @@
 #include "secrets.h"
 
 // Configurazione WiFi
-const char* ssid = WIFI_ID;           // Sostituisci con il nome della tua rete WiFi
-const char* password = WIFI_PASSWORD;   // Sostituisci con la password della tua rete WiFi
+const char* ssid = WIFI_ID;           
+const char* password = WIFI_PASSWORD;   
 
 // Configurazione ThingSpeak
-const char* thingSpeakApiKey = THING_SPEAK_API;  // <-- Sostituisci con la tua Write API Key
+const char* thingSpeakApiKey = THING_SPEAK_API;  
 
 // UART
 #define RXD2 16
@@ -76,8 +76,7 @@ void loop() {
 
     receivedData = "";
     dataReady = false;
-
-    // Rispetta il rate limit di ThingSpeak (1 richiesta ogni 15 sec)
+    
     delay(16000);
   }
 
