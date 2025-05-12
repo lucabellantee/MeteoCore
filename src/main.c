@@ -9,7 +9,6 @@
  #include <zephyr/drivers/i2c.h>
  #include <zephyr/drivers/uart.h>
  #include <zephyr/logging/log.h>
- 
  #include "bme280.h"
  #include "rain_model.h"
  #include "esp32_comm.h"
