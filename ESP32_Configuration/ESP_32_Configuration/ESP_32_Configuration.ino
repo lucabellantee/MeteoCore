@@ -96,7 +96,7 @@
      dataReady = false;
    }
    
-   delay(10);  // Piccolo delay per evitare un uso eccessivo della CPU
+   //delay();  // Piccolo delay per evitare un uso eccessivo della CPU
  }
  
  /**

@@ -259,23 +259,18 @@
 // //      LOG_INF("Sistema inizializzato e pronto (MODALITÀ TEST)");
 // //  }
 
-
-
-// PROVA CON DUE THREADS
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 #include <stdio.h>
 #include "bme280.h"
 #include "rain_model.h"
 #include "esp32_comm.h"
 
-LOG_MODULE_REGISTER(main);
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define STACK_SIZE 2048
 #define THREAD_PRIORITY 5
@@ -283,13 +278,11 @@ LOG_MODULE_REGISTER(main);
 #define PREDICTION_INTERVAL_MS 65000 // 1 MINUTO E 5 SECONDI
 #define MAX_SAMPLES 30  // 5 minuti se SAMPLING_INTERVAL_MS = 10s
 
-// Sensore I2C
-#define I2C_NODE DT_NODELABEL(i2c1)
-static const struct device *i2c_dev = DEVICE_DT_GET(I2C_NODE);
+// Sensore I2C - usa DT_ALIAS come nel codice originale
+static const struct device *i2c_dev = DEVICE_DT_GET(DT_ALIAS(i2c1));
 
-// UART ESP32
-#define UART_NODE DT_NODELABEL(uart2)
-static const struct device *uart_dev = DEVICE_DT_GET(UART_NODE);
+// UART ESP32 - mantieni uart1 come nell'originale se stai usando lo stesso dispositivo
+static const struct device *uart_dev = DEVICE_DT_GET(DT_ALIAS(uart1));
 
 // Semaforo per sincronizzazione
 K_SEM_DEFINE(init_sem, 0, 2);
@@ -301,7 +294,6 @@ typedef struct {
     float humidity[MAX_SAMPLES];
     int count;
 } sensor_buffer_t;
-
 
 static sensor_buffer_t sensor_buffer;
 K_MUTEX_DEFINE(buffer_mutex);
@@ -315,6 +307,10 @@ static struct k_thread prediction_thread_data;
 // Thread di acquisizione dati
 void data_acquisition_thread(void *arg1, void *arg2, void *arg3)
 {
+    ARG_UNUSED(arg1);
+    ARG_UNUSED(arg2);
+    ARG_UNUSED(arg3);
+    
     bme280_data_t sensor_data;
 
     k_sem_take(&init_sem, K_FOREVER);
@@ -322,7 +318,7 @@ void data_acquisition_thread(void *arg1, void *arg2, void *arg3)
 
     while (1) {
         if (bme280_read_data(i2c_dev, &sensor_data)) {
-            LOG_INF("T: %.2f°C, P: %.2f hPa, H: %.2f%%",
+            LOG_INF("T: %.2fC, P: %.2f hPa, H: %.2f%%",
                     sensor_data.temperature, sensor_data.pressure, sensor_data.humidity);
 
             k_mutex_lock(&buffer_mutex, K_FOREVER);
@@ -345,6 +341,10 @@ void data_acquisition_thread(void *arg1, void *arg2, void *arg3)
 // Thread di predizione
 void prediction_thread(void *arg1, void *arg2, void *arg3)
 {
+    ARG_UNUSED(arg1);
+    ARG_UNUSED(arg2);
+    ARG_UNUSED(arg3);
+    
     bme280_data_t avg_data;
     float rain_prob;
 
@@ -372,7 +372,7 @@ void prediction_thread(void *arg1, void *arg2, void *arg3)
         k_mutex_unlock(&buffer_mutex);
 
         rain_prob = (float)predict_rain(&avg_data);
-        LOG_INF("Media -> T: %.2f°C, P: %.2f hPa, H: %.2f%%", avg_data.temperature, avg_data.pressure, avg_data.humidity);
+        LOG_INF("Media -> T: %.2fC, P: %.2f hPa, H: %.2f%%", avg_data.temperature, avg_data.pressure, avg_data.humidity);
         LOG_INF("Probabilità pioggia (media): %.1f%%", rain_prob);
 
         if (!esp32_send_data(uart_dev, &avg_data, rain_prob)) {
@@ -399,6 +399,15 @@ void main(void)
         LOG_ERR("Errore inizializzazione BME280");
         return;
     }
+    
+    // Inizializza il modello ML
+    ml_model_init();
+    
+    // Inizializza la comunicazione con ESP32
+    if (!esp32_comm_init(uart_dev)) {
+        LOG_ERR("Impossibile inizializzare la comunicazione con ESP32");
+        return;
+    }
 
     LOG_INF("Dispositivi inizializzati");
     k_sem_give(&init_sem);
@@ -408,9 +417,11 @@ void main(void)
     k_thread_create(&thread_data, thread_stack, STACK_SIZE,
                     data_acquisition_thread, NULL, NULL, NULL,
                     THREAD_PRIORITY, 0, K_NO_WAIT);
+    k_thread_name_set(&thread_data, "data_acquisition_thread");
 
     // Creazione thread inferenza
     k_thread_create(&prediction_thread_data, prediction_thread_stack, STACK_SIZE,
                     prediction_thread, NULL, NULL, NULL,
                     THREAD_PRIORITY, 0, K_NO_WAIT);
+    k_thread_name_set(&prediction_thread_data, "prediction_thread");
 }

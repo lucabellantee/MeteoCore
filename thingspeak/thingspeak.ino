@@ -77,10 +77,10 @@ void loop() {
     receivedData = "";
     dataReady = false;
     
-    delay(16000);
+    //delay(16000);
   }
 
-  delay(10);
+  //delay(10);
 }
 
 void sendToThingSpeak(float temp, float press, float hum, float rain) {

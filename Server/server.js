@@ -30,8 +30,8 @@ app.post('/api/data', (req, res) => {
 });
 
 // Configura il server per ascoltare le richieste sulla porta specificata e su un indirizzo IP specifico
-app.listen(PORT, '192.168.63.121', () => {
-  console.log(`Server attivo su http://192.168.63.121:${PORT}`);
+app.listen(PORT, '192.168.63.5', () => {
+  console.log(`Server attivo su http://192.168.63.5:${PORT}`);
 });
 
 
