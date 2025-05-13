@@ -274,20 +274,20 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define STACK_SIZE 2048
 #define THREAD_PRIORITY 5
-#define SAMPLING_INTERVAL_MS 10000 // 10 SECONDI
-#define PREDICTION_INTERVAL_MS 65000 // 1 MINUTO E 5 SECONDI
-#define MAX_SAMPLES 30  // 5 minuti se SAMPLING_INTERVAL_MS = 10s
+#define SAMPLING_INTERVAL_MS 10000 // 10 SECONDS
+#define PREDICTION_INTERVAL_MS 65000 // 1 MINUTE AND 5 SECONDS
+#define MAX_SAMPLES 30  // 5 minutes if SAMPLING_INTERVAL_MS = 10s
 
-// Sensore I2C - usa DT_ALIAS come nel codice originale
+// I2C sensor - uses DT_ALIAS as in the original code
 static const struct device *i2c_dev = DEVICE_DT_GET(DT_ALIAS(i2c1));
 
-// UART ESP32 - mantieni uart1 come nell'originale se stai usando lo stesso dispositivo
+// UART ESP32 - keep uart1 as in the original if you're using the same device
 static const struct device *uart_dev = DEVICE_DT_GET(DT_ALIAS(uart1));
 
-// Semaforo per sincronizzazione
+// Semaphore for synchronization
 K_SEM_DEFINE(init_sem, 0, 2);
 
-// Struttura buffer
+// Structure buffer
 typedef struct {
     float temperature[MAX_SAMPLES];
     float pressure[MAX_SAMPLES];
@@ -304,7 +304,14 @@ K_THREAD_STACK_DEFINE(prediction_thread_stack, STACK_SIZE);
 static struct k_thread thread_data;
 static struct k_thread prediction_thread_data;
 
-// Thread di acquisizione dati
+/**
+ * @brief Data acquisition thread
+ *
+ * This thread reads data from the BME280 sensor at a regular interval defined by 
+ * SAMPLING_INTERVAL_MS (10 seconds) and stores the values (temperature, pressure, humidity) 
+ * in a buffer. The buffer holds a maximum of MAX_SAMPLES (30 samples). 
+ * It ensures thread synchronization using a mutex to avoid race conditions.
+ */
 void data_acquisition_thread(void *arg1, void *arg2, void *arg3)
 {
     ARG_UNUSED(arg1);
@@ -314,7 +321,7 @@ void data_acquisition_thread(void *arg1, void *arg2, void *arg3)
     bme280_data_t sensor_data;
 
     k_sem_take(&init_sem, K_FOREVER);
-    LOG_INF("Thread lettura avviato");
+    LOG_INF("Reading thread started");
 
     while (1) {
         if (bme280_read_data(i2c_dev, &sensor_data)) {
@@ -331,14 +338,23 @@ void data_acquisition_thread(void *arg1, void *arg2, void *arg3)
             }
             k_mutex_unlock(&buffer_mutex);
         } else {
-            LOG_ERR("Errore lettura sensore");
+            LOG_ERR("Sensor read error");
         }
 
         k_sleep(K_MSEC(SAMPLING_INTERVAL_MS));
     }
 }
 
-// Thread di predizione
+/**
+ * @brief Prediction thread
+ *
+ * This thread is responsible for calculating the average values of the sensor data 
+ * stored in the buffer and performing the rain prediction using a machine learning model. 
+ * After calculating the average values for temperature, pressure, and humidity, it uses 
+ * the `predict_rain` function to predict the probability of rain. 
+ * The result is then sent to the ESP32 via UART. 
+ * The prediction occurs at an interval defined by PREDICTION_INTERVAL_MS (1 minute and 5 seconds).
+ */
 void prediction_thread(void *arg1, void *arg2, void *arg3)
 {
     ARG_UNUSED(arg1);
@@ -349,7 +365,7 @@ void prediction_thread(void *arg1, void *arg2, void *arg3)
     float rain_prob;
 
     k_sem_take(&init_sem, K_FOREVER);
-    LOG_INF("Thread predizione avviato");
+    LOG_INF("Prediction thread started");
 
     while (1) {
         k_mutex_lock(&buffer_mutex, K_FOREVER);
@@ -372,54 +388,61 @@ void prediction_thread(void *arg1, void *arg2, void *arg3)
         k_mutex_unlock(&buffer_mutex);
 
         rain_prob = (float)predict_rain(&avg_data);
-        LOG_INF("Media -> T: %.2fC, P: %.2f hPa, H: %.2f%%", avg_data.temperature, avg_data.pressure, avg_data.humidity);
-        LOG_INF("Previsione pioggia: %.1f%%", rain_prob);
+        LOG_INF("Average -> T: %.2fC, P: %.2f hPa, H: %.2f%%", avg_data.temperature, avg_data.pressure, avg_data.humidity);
+        LOG_INF("Rain prediction: %.1f%%", rain_prob);
 
         if (!esp32_send_data(uart_dev, &avg_data, rain_prob)) {
-            LOG_ERR("Errore invio dati ESP32");
+            LOG_ERR("Error sending data to ESP32");
         }
 
         k_sleep(K_MSEC(PREDICTION_INTERVAL_MS));
     }
 }
 
+/**
+ * @brief Main function
+ *
+ * Initializes the I2C, UART, and sensor devices. It also initializes the ML model 
+ * for rain prediction and starts the data acquisition and prediction threads.
+ * It ensures that all devices and threads are properly initialized and ready.
+ */
 void main(void)
 {
     if (!device_is_ready(i2c_dev)) {
-        LOG_ERR("I2C non pronto");
+        LOG_ERR("I2C not ready");
         return;
     }
 
     if (!device_is_ready(uart_dev)) {
-        LOG_ERR("UART non pronta");
+        LOG_ERR("UART not ready");
         return;
     }
 
     if (!bme280_init(i2c_dev)) {
-        LOG_ERR("Errore inizializzazione BME280");
+        LOG_ERR("BME280 initialization error");
         return;
     }
     
-    // Inizializza il modello ML
+    // Initialize ML model
     ml_model_init();
     
-    // Inizializza la comunicazione con ESP32
+    // Initialize communication with ESP32
     if (!esp32_comm_init(uart_dev)) {
-        LOG_ERR("Impossibile inizializzare la comunicazione con ESP32");
+        LOG_ERR("Unable to initialize communication with ESP32");
         return;
     }
 
-    LOG_INF("Dispositivi inizializzati");
+    LOG_INF("Devices initialized");
     k_sem_give(&init_sem);
     k_sem_give(&init_sem);
 
-    // Creazione thread lettura
+    // Create data acquisition thread
     k_thread_create(&thread_data, thread_stack, STACK_SIZE,
                     data_acquisition_thread, NULL, NULL, NULL,
                     THREAD_PRIORITY, 0, K_NO_WAIT);
     k_thread_name_set(&thread_data, "data_acquisition_thread");
 
-    // Creazione thread inferenza
+    // Create prediction thread
     k_thread_create(&prediction_thread_data, prediction_thread_stack, STACK_SIZE,
                     prediction_thread, NULL, NULL, NULL,
                     THREAD_PRIORITY, 0, K_NO_WAIT);

@@ -4,15 +4,15 @@
 #include "bme280.h"
 
 /**
- * @brief Inizializza il modello di ML
+ * @brief Initializes the ML model
  */
 void ml_model_init(void);
 
 /**
- * @brief Predice la probabilita di pioggia usando i dati del sensore
+ * @brief Predicts the probability of rain using the sensor data
  *
- * @param data Dati del sensore BME280
- * @return Probabilita di pioggia in percentuale (0-100)
+ * @param data BME280 sensor data
+ * @return Rain probability in percentage (0-100)
  */
 int predict_rain(const bme280_data_t *data);
 

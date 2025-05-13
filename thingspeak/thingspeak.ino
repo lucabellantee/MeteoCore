@@ -1,8 +1,8 @@
 /**
- * ESP32 Weather Station - Integrazione con ThingSpeak
+ * ESP32 Weather Station - Integration with ThingSpeak
  * 
- * Riceve dati meteorologici da STM32 via UART, li decodifica come JSON
- * e li invia a ThingSpeak via HTTP GET.
+ * Receives weather data from STM32 via UART, decodes it as JSON
+ * and sends it to ThingSpeak via HTTP GET.
  */
 
 #include <WiFi.h>
@@ -10,11 +10,11 @@
 #include <ArduinoJson.h>
 #include "secrets.h"
 
-// Configurazione WiFi
+// WiFi Configuration
 const char* ssid = WIFI_ID;           
 const char* password = WIFI_PASSWORD;   
 
-// Configurazione ThingSpeak
+// ThingSpeak Configuration
 const char* thingSpeakApiKey = THING_SPEAK_API;  
 
 // UART
@@ -31,14 +31,14 @@ void setup() {
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
 
   WiFi.begin(ssid, password);
-  Serial.print("Connessione al WiFi");
+  Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
   Serial.println("");
-  Serial.println("WiFi connesso");
-  Serial.println("Indirizzo IP: " + WiFi.localIP().toString());
+  Serial.println("WiFi connected");
+  Serial.println("IP Address: " + WiFi.localIP().toString());
 }
 
 void loop() {
@@ -52,13 +52,13 @@ void loop() {
   }
 
   if (dataReady) {
-    Serial.println("Dati ricevuti: " + receivedData);
+    Serial.println("Received data: " + receivedData);
 
     DynamicJsonDocument doc(256);
     DeserializationError error = deserializeJson(doc, receivedData);
 
     if (error) {
-      Serial.print("deserializeJson() fallita: ");
+      Serial.print("deserializeJson() failed: ");
       Serial.println(error.c_str());
     } else {
       float temperature = doc["temp"];
@@ -66,10 +66,10 @@ void loop() {
       float humidity = doc["hum"];
       float rainProb = doc["rain"];
 
-      Serial.println("Temperatura: " + String(temperature) + "°C");
-      Serial.println("Pressione: " + String(pressure) + " hPa");
-      Serial.println("Umidità: " + String(humidity) + "%");
-      Serial.println("Pioggia prevista: " + String((int)rainProb));
+      Serial.println("Temperature: " + String(temperature) + "°C");
+      Serial.println("Pressure: " + String(pressure) + " hPa");
+      Serial.println("Humidity: " + String(humidity) + "%");
+      Serial.println("Predicted rain: " + String((int)rainProb));
 
       sendToThingSpeak(temperature, pressure, humidity, rainProb);
     }
@@ -85,11 +85,11 @@ void loop() {
 
 void sendToThingSpeak(float temp, float press, float hum, float rain) {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi disconnesso. Riconnessione...");
+    Serial.println("WiFi disconnected. Reconnecting...");
     WiFi.reconnect();
     delay(5000);
     if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("Impossibile riconnettersi al WiFi.");
+      Serial.println("Unable to reconnect to WiFi.");
       return;
     }
   }
@@ -99,7 +99,7 @@ void sendToThingSpeak(float temp, float press, float hum, float rain) {
                "&field1=" + String(temp) +
                "&field2=" + String(press) +
                "&field3=" + String(hum) +
-               "&field4=" + String((int)rain);  // Cast a int per sicurezza
+               "&field4=" + String((int)rain);  // Cast to int for safety
 
   Serial.println("URL: " + url);
   http.begin(url);
@@ -110,7 +110,7 @@ void sendToThingSpeak(float temp, float press, float hum, float rain) {
     String response = http.getString();
     Serial.println("ThingSpeak response: " + response);
   } else {
-    Serial.println("Errore ThingSpeak: " + String(httpResponseCode));
+    Serial.println("ThingSpeak error: " + String(httpResponseCode));
   }
 
   http.end();

@@ -1,6 +1,6 @@
 /**
  * @file esp32_comm.h
- * @brief Comunicazione con il modulo ESP32
+ * @brief Communication with the ESP32 module
  */
 
  #ifndef ESP32_COMM_H
@@ -11,20 +11,20 @@
  #include "bme280.h"
  
  /**
-  * @brief Inizializza la comunicazione UART con ESP32
+  * @brief Initializes UART communication with the ESP32
   *
-  * @param uart_dev Puntatore al dispositivo UART
-  * @return true se l'inizializzazione è riuscita, false altrimenti
+  * @param uart_dev Pointer to the UART device
+  * @return true if initialization was successful, false otherwise
   */
  bool esp32_comm_init(const struct device *uart_dev);
  
  /**
-  * @brief Invia i dati all'ESP32
+  * @brief Sends data to the ESP32
   *
-  * @param uart_dev Puntatore al dispositivo UART
-  * @param sensor_data Dati del sensore BME280
-  * @param rain_probability Probabilità di pioggia
-  * @return true se l'invio è riuscito, false altrimenti
+  * @param uart_dev Pointer to the UART device
+  * @param sensor_data BME280 sensor data
+  * @param rain_probability Rain probability
+  * @return true if sending was successful, false otherwise
   */
  bool esp32_send_data(const struct device *uart_dev, 
                      const bme280_data_t *sensor_data, 

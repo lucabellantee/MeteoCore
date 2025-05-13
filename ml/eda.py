@@ -1,11 +1,11 @@
 """
-Questo script esegue un'analisi esplorativa dei dati (EDA) sul dataset meteorologico
-con l'obiettivo di comprendere meglio la distribuzione delle classi e le correlazioni tra le variabili.
-Comprende:
-- Statistiche descrittive del dataset
-- Analisi della distribuzione delle classi nel target ("Rain Tomorrow")
-- Visualizzazione della distribuzione delle classi tramite un grafico a barre
-- Analisi della correlazione tra le variabili tramite una heatmap
+This script performs an exploratory data analysis (EDA) on the weather dataset
+with the aim of better understanding the distribution of classes and the correlations between variables.
+It includes:
+- Descriptive statistics of the dataset
+- Analysis of the class distribution in the target ("Rain Tomorrow")
+- Visualization of class distribution using a bar plot
+- Analysis of the correlation between variables using a heatmap
 """
 
 import pandas as pd
@@ -15,35 +15,31 @@ from sklearn.preprocessing import LabelEncoder
 from imblearn.over_sampling import SMOTE
 from collections import Counter
 
-# Carica il dataset
+# Load the dataset
 INPUT_PATH = "../dataset/cleaned_dataset.csv"
 df = pd.read_csv(INPUT_PATH)
 
-# Statistiche descrittive del dataset
-print("[✓] Statistiche descrittive del dataset:")
+# Descriptive statistics of the dataset
+print("[✓] Descriptive statistics of the dataset:")
 print(df.describe())
 
-# Analizza la distribuzione delle classi nel target
+# Analyze the class distribution in the target
 target = 'Rain Tomorrow'
 class_distribution = df[target].value_counts()
-print(f"\n[✓] Distribuzione delle classi nel target '{target}':")
+print(f"\n[✓] Class distribution in the target '{target}':")
 print(class_distribution)
 
-# Visualizza la distribuzione delle classi con un grafico a barre
+# Visualize the class distribution with a bar plot
 plt.figure(figsize=(6, 4))
 sns.countplot(x=target, data=df, palette="Set2")
-plt.title(f'Distribuzione delle classi per "{target}"')
+plt.title(f'Class Distribution for "{target}"')
 plt.xlabel(target)
-plt.ylabel('Conteggio')
+plt.ylabel('Count')
 plt.show()
 
-# Esplora la correlazione tra le variabili
+# Explore the correlation between variables
 correlation_matrix = df.corr()
 plt.figure(figsize=(10, 8))
 sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f')
-plt.title("Matrice di correlazione tra le variabili")
+plt.title("Correlation Matrix Between Variables")
 plt.show()
-
-
-
-
