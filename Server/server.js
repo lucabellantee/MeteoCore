@@ -1,13 +1,13 @@
 /*
-  Questo script definisce un server web utilizzando, configurato per ascoltare richieste HTTP POST su una rotta `/api/data`.
+  This script defines a web server using Express, configured to listen for HTTP POST requests on the `/api/data` route.
 
-  Le principali funzionalità includono:
-  - Abilitazione di CORS per consentire richieste da altri domini.
-  - Parsing delle richieste JSON tramite `body-parser` per estrarre i dati dal corpo della richiesta.
-  - Risposta di conferma con un messaggio JSON.
+  The main functionalities include:
+  - Enabling CORS to allow requests from other domains.
+  - Parsing JSON requests using `body-parser` to extract data from the request body.
+  - Sending a confirmation response with a JSON message.
 */
 
-// Importa le librerie necessarie
+// Import the required libraries
 const express = require('express');         
 const bodyParser = require('body-parser'); 
 const cors = require('cors');              
@@ -15,23 +15,21 @@ const cors = require('cors');
 const app = express();     
 const PORT = 3000;        
 
-// Middleware per abilitare CORS, permettendo chiamate HTTP da altri domini (utile per separare il frontend dal backend)
+// Middleware to enable CORS, allowing HTTP calls from other domains (useful for separating frontend from backend)
 app.use(cors());
 
-// Middleware per il parsing del corpo delle richieste in formato JSON
+// Middleware for parsing request bodies in JSON format
 app.use(bodyParser.json());
 
-// Definizione di una rotta POST su /api/data, che processa le richieste in arrivo
+// Define a POST route on /api/data that processes incoming requests
 app.post('/api/data', (req, res) => {
-  console.log('Dati ricevuti:', req.body);
+  console.log('Data received:', req.body);
   
-  // Invia una risposta di conferma con un codice di stato 200 (OK)
-  res.status(200).send({ message: 'Dati ricevuti correttamente' });
+  // Send a confirmation response with a 200 status code (OK)
+  res.status(200).send({ message: 'Data received successfully' });
 });
 
-// Configura il server per ascoltare le richieste sulla porta specificata e su un indirizzo IP specifico
+// Configure the server to listen on the specified port and IP address
 app.listen(PORT, '192.168.63.5', () => {
-  console.log(`Server attivo su http://192.168.63.5:${PORT}`);
+  console.log(`Server is up on http://192.168.63.5:${PORT}`);
 });
-
-

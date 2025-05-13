@@ -1,36 +1,37 @@
 # 🌧️ USA Rainfall Prediction Dataset (2024–2025)
 
-Il dataset utilizzato fornisce dati meteorologici dettagliati raccolti in 20 città principali degli Stati Uniti durante gli anni 2024 e 2025.
+The dataset provides detailed weather data collected from 20 major cities in the United States during the years 2024 and 2025.
 
-## Contenuto del dataset
+## Dataset Content
 
-- Oltre 2 anni di dati giornalieri
-- Ogni riga rappresenta un giorno specifico in una delle città monitorate
-- Include attributi fondamentali come:
-  - Data
-  - Luogo
-  - Temperatura
-  - Umidità
-  - Velocità del vento
-  - Copertura nuvolosa
-  - Pressione atmosferica
-  - Precipitazioni
+- Over 2 years of daily data
+- Each row represents a specific day in one of the monitored cities
+- Includes key attributes such as:
+  - Date
+  - Location
+  - Temperature
+  - Humidity
+  - Wind speed
+  - Cloud cover
+  - Atmospheric pressure
+  - Precipitation
 
-## 🎯 Obiettivo
+## 🎯 Objective
 
-Il dataset ha come target la colonna **`RainTomorrow`**, un'etichetta binaria:
-- `1`: ha piovuto il giorno successivo
-- `0`: non ha piovuto il giorno successivo
+The dataset's target is the **`RainTomorrow`** column, a binary label:
+- `1`: It rained the following day
+- `0`: It did not rain the following day
 
-Questo lo rende particolarmente adatto a problemi di classificazione binaria per il machine learning.
+This makes it particularly suitable for binary classification machine learning problems.
 
-## Note aggiuntive
+## Additional Notes
 
-- Verificare ed eventualmente trattare valori mancanti o anomali
-- Bilanciamento delle classi
-- Le date sono in formato `YYYY-MM-DD`
-- Il file CSV originale non è incluso nel repository (aggiunto a `.gitignore`)
+- Check and possibly handle missing or anomalous values
+- Class balancing
+- Dates are in `YYYY-MM-DD` format
+- The original CSV file is not included in the repository (added to `.gitignore`)
 
-## Fonte
+## Source
 
-Dataset disponibile su [Kaggle](https://www.kaggle.com/datasets/waqi786/usa-rainfall-prediction-dataset-2024-2025)  
+Dataset available on [Kaggle](https://www.kaggle.com/datasets/waqi786/usa-rainfall-prediction-dataset-2024-2025)
+

@@ -1,11 +1,11 @@
 """
-Questo script genera automaticamente i file C `rain_model.c` e `rain_model.h` contenenti
-una rappresentazione del modello Decision Tree addestrato in Python, convertito in codice C
-compatibile con ambienti embedded come Zephyr RTOS su STM32.
+This script automatically generates the C files `rain_model.c` and `rain_model.h` containing
+a representation of the trained Decision Tree model in Python, converted into C code
+compatible with embedded environments like Zephyr RTOS on STM32.
 
-- Il file `rain_model.c` implementa la funzione `predict_rain` che prende in input una struttura `bme280_data_t`
-  contenente temperature, umidità e pressione, e restituisce 0 o 1 in base alla previsione di pioggia.
-- Il file `rain_model.h` contiene i prototipi di funzione e include il file `bme280.h`.
+- The file `rain_model.c` implements the function `predict_rain` that takes as input a structure `bme280_data_t`
+  containing temperature, humidity, and pressure, and returns 0 or 1 based on the rain prediction.
+- The file `rain_model.h` contains function prototypes and includes the `bme280.h` file.
 """
 
 import os
@@ -14,10 +14,10 @@ import joblib
 
 features = ['Temperature', 'Humidity', 'Pressure']
 
-# Carica il modello già addestrato
+# Load the pre-trained model
 model = joblib.load("model.joblib")
 
-# Funzione per convertire l'albero decisionale in codice C, integrato con il wrapper richiesto
+# Function to convert the decision tree into C code, integrated with the required wrapper
 def tree_to_c(tree, feature_names):
     tree_ = tree.tree_
     feature_name = [
@@ -43,17 +43,17 @@ def tree_to_c(tree, feature_names):
 
     return recurse(0, 2)  # indent starting from 2 to match surrounding code
 
-# Genera corpo della funzione predict_rain
+# Generate the body of the predict_rain function
 predict_function_body = tree_to_c(model, features)
 
-# Contenuto completo del file rain_model.c
+# Complete content of the rain_model.c file
 c_code = f"""#include <zephyr/logging/log.h>
 #include "rain_model.h"
 
 LOG_MODULE_REGISTER(rain_model, CONFIG_LOG_DEFAULT_LEVEL);
 
 void ml_model_init(void) {{
-    LOG_INF("Modello ML inizializzato");
+    LOG_INF("ML model initialized");
 }}
 
 int predict_rain(const bme280_data_t *data) {{
@@ -64,37 +64,37 @@ int predict_rain(const bme280_data_t *data) {{
 {predict_function_body}}}
 """
 
-# Contenuto del file rain_model.h
+# Content of the rain_model.h file
 header_code = """#ifndef RAIN_MODEL_H
 #define RAIN_MODEL_H
 
 #include "bme280.h"
 
 /**
- * @brief Inizializza il modello di ML
+ * @brief Initializes the ML model
  */
 void ml_model_init(void);
 
 /**
- * @brief Predice la probabilita di pioggia usando i dati del sensore
+ * @brief Predicts the probability of rain using sensor data
  *
- * @param data Dati del sensore BME280
- * @return Probabilita di pioggia in percentuale (0-100)
+ * @param data BME280 sensor data
+ * @return Rain probability as a percentage (0-100)
  */
 int predict_rain(const bme280_data_t *data);
 
 #endif /* RAIN_MODEL_H */
 """
 
-# Percorso di output
+# Output path
 output_dir = "../src"
 os.makedirs(output_dir, exist_ok=True)
 
-# Salvataggio dei file
+# Save the files
 with open(os.path.join(output_dir, "rain_model.c"), "w") as f:
     f.write(c_code)
 
 with open(os.path.join(output_dir, "rain_model.h"), "w") as f:
     f.write(header_code)
 
-print("[✓] Codice C completo generato e salvato in 'src/'")
+print("[✓] Complete C code generated and saved in 'src/'")

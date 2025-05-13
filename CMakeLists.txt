@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20.0)
-set(ZEPHYR_BASE C:/zephyrproject/zephyr)
+set(ZEPHYR_BASE $ENV{ZEPHYR_BASE})
 find_package(Zephyr REQUIRED HINTS ${ZEPHYR_BASE})
 project(weather_prediction)
 

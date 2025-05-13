@@ -1,6 +1,6 @@
 /**
  * @file bme280.c
- * @brief Implementazione del driver per il sensore BME280
+ * @brief Implementation of the driver for the BME280 sensor
  */
 
  #include "bme280.h"
@@ -8,7 +8,7 @@
  
  LOG_MODULE_REGISTER(bme280, CONFIG_LOG_DEFAULT_LEVEL);
  
- /* Registri del BME280 */
+ /* BME280 Registers */
  #define BME280_REG_ID           0xD0
  #define BME280_REG_RESET        0xE0
  #define BME280_REG_CTRL_HUM     0xF2
@@ -24,17 +24,17 @@
  #define BME280_REG_HUM_MSB      0xFD
  #define BME280_REG_HUM_LSB      0xFE
  
- /* Valori del chip ID */
+ /* chip ID values */
  #define BME280_CHIP_ID          0x60
  
- /* Parametri di calibrazione */
+ /* Calibration Parameters */
  struct bme280_calib_param {
-     /* Temperatura */
+     /* Temperature */
      uint16_t dig_t1;
      int16_t  dig_t2;
      int16_t  dig_t3;
      
-     /* Pressione */
+     /* Pressure */
      uint16_t dig_p1;
      int16_t  dig_p2;
      int16_t  dig_p3;
@@ -45,7 +45,7 @@
      int16_t  dig_p8;
      int16_t  dig_p9;
      
-     /* Umidità */
+     /* Humidity */
      uint8_t  dig_h1;
      int16_t  dig_h2;
      uint8_t  dig_h3;
@@ -53,17 +53,14 @@
      int16_t  dig_h5;
      int8_t   dig_h6;
      
-     /* Variabile per temperature fine */
      int32_t t_fine;
  };
  
  static struct bme280_calib_param calib_data;
+ static uint8_t bme280_i2c_addr = 0x76;  
 
- static uint8_t bme280_i2c_addr = 0x76;  // sarà aggiornato dinamicamente
-
- 
  /**
-  * @brief Legge un byte dal registro specificato
+  * @brief Reads a byte from the specified register
   */
  static int bme280_read_reg(const struct device *i2c_dev, uint8_t reg, uint8_t *data)
  {
@@ -71,7 +68,7 @@
  }
  
  /**
-  * @brief Scrive un byte nel registro specificato
+  * @brief Writes a byte to the specified register
   */
  static int bme280_write_reg(const struct device *i2c_dev, uint8_t reg, uint8_t value)
  {
@@ -79,15 +76,15 @@
  }
  
  /**
-  * @brief Legge i parametri di calibrazione
+  * @brief Reads the calibration parameters
   */
  static bool read_calibration_data(const struct device *i2c_dev)
  {
      uint8_t buf[24];
      
-     /* Legge i primi parametri di calibrazione (0x88-0x9F) */
+     /* Reads the first calibration parameters (0x88-0x9F) */
      if (i2c_burst_read(i2c_dev, bme280_i2c_addr, 0x88, buf, 24) != 0) {
-         LOG_ERR("Impossibile leggere i parametri di calibrazione");
+         LOG_ERR("Unable to read calibration parameters");
          return false;
      }
      
@@ -105,15 +102,15 @@
      calib_data.dig_p8 = (int16_t)((buf[21] << 8) | buf[20]);
      calib_data.dig_p9 = (int16_t)((buf[23] << 8) | buf[22]);
      
-     /* Legge il parametro dig_h1 */
+     /* Reads parameter dig_h1 */
      if (bme280_read_reg(i2c_dev, 0xA1, &calib_data.dig_h1) != 0) {
-         LOG_ERR("Impossibile leggere dig_h1");
+         LOG_ERR("Unable to read dig_h1");
          return false;
      }
      
-     /* Legge i parametri di calibrazione dell'umidità */
+     /* Reads humidity calibration parameters */
      if (i2c_burst_read(i2c_dev, bme280_i2c_addr, 0xE1, buf, 7) != 0) {
-         LOG_ERR("Impossibile leggere i parametri di calibrazione dell'umidità");
+         LOG_ERR("Unable to read humidity calibration parameters");
          return false;
      }
      
@@ -127,7 +124,7 @@
  }
  
  /**
-  * @brief Calcola la temperatura compensata
+  * @brief Calculates the compensated temperature
   */
  static float compensate_temperature(int32_t adc_temp)
  {
@@ -145,7 +142,7 @@
  }
  
  /**
-  * @brief Calcola la pressione compensata
+  * @brief Calculates the compensated pressure
   */
  static float compensate_pressure(int32_t adc_press)
  {
@@ -160,7 +157,7 @@
      var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)calib_data.dig_p1) >> 33;
      
      if (var1 == 0) {
-         return 0; // per evitare divisione per zero
+         return 0; 
      }
      
      p = 1048576 - adc_press;
@@ -170,11 +167,11 @@
      
      p = ((p + var1 + var2) >> 8) + (((int64_t)calib_data.dig_p7) << 4);
      
-     return (float)p / 256.0f / 100.0f; // Pressione in hPa
+     return (float)p / 256.0f / 100.0f; // Pressure in hPa
  }
  
  /**
-  * @brief Calcola l'umidità compensata
+  * @brief Calculates the compensated humidity
   */
  static float compensate_humidity(int32_t adc_hum)
  {
@@ -200,15 +197,15 @@
  bool bme280_init(const struct device *i2c_dev)
 {
     if (!device_is_ready(i2c_dev)) {
-        LOG_ERR("Dispositivo I2C non pronto");
+        LOG_ERR("I2C device not ready");
         return false;
     }
 
-    k_msleep(200);  // Stabilizzazione
+    k_msleep(200);  
 
-    LOG_INF("Avvio scansione BME280...");
+    LOG_INF("Starting BME280 scan...");
 
-    // Scansione su entrambi gli indirizzi possibili (0x76, 0x77)
+    // Scan on both possible addresses (0x76, 0x77)
     for (uint8_t addr = 0x76; addr <= 0x77; addr++) {
         uint8_t dummy = 0;
         struct i2c_msg ping_msg = {
@@ -218,29 +215,29 @@
         };
 
         int ret = i2c_transfer(i2c_dev, &ping_msg, 1, addr);
-        LOG_INF("Test indirizzo 0x%02X: %d", addr, ret);
+        LOG_INF("Test address 0x%02X: %d", addr, ret);
 
         if (ret == 0) {
             bme280_i2c_addr = addr;
-            LOG_INF("Dispositivo risponde all'indirizzo 0x%02X", addr);
+            LOG_INF("Device responds to the address 0x%02X", addr);
             break;
         }
     }
 
     if (bme280_i2c_addr == 0) {
-        LOG_ERR("Nessun dispositivo I2C trovato agli indirizzi BME280");
+        LOG_ERR("No I2C device found at BME280 addresses");
         return false;
     }
 
-    k_msleep(10);  // Stabilizzazione
+    k_msleep(10);
 
-    // Configurazione del sensore (aggiunta qui)
-    bme280_write_reg(i2c_dev, BME280_REG_CTRL_HUM, 0x01);     // Oversampling umidità x1
-    bme280_write_reg(i2c_dev, BME280_REG_CTRL_MEAS, 0x27);    // Temp x1, Press x1, modalità normale
-    bme280_write_reg(i2c_dev, BME280_REG_CONFIG, 0xA0);       // Standby 1000ms, filtro x4
+    // Sensor configuration
+    bme280_write_reg(i2c_dev, BME280_REG_CTRL_HUM, 0x01);     
+    bme280_write_reg(i2c_dev, BME280_REG_CTRL_MEAS, 0x27);    
+    bme280_write_reg(i2c_dev, BME280_REG_CONFIG, 0xA0);      
 
     for (int attempt = 0; attempt < 5; attempt++) {
-        // 1. Scrittura indirizzo del registro ID
+        // 1. Writing the register address for ID
         uint8_t id_reg = 0xD0;
         struct i2c_msg write_msg = {
             .buf = &id_reg,
@@ -248,18 +245,18 @@
             .flags = I2C_MSG_WRITE | I2C_MSG_STOP,
         };
 
-        LOG_INF("Invio indirizzo registro ID 0xD0");
+        LOG_INF("Sending register address ID 0xD0");
         int write_ret = i2c_transfer(i2c_dev, &write_msg, 1, bme280_i2c_addr);
 
         if (write_ret != 0) {
-            LOG_WRN("Errore scrittura registro ID: %d (tentativo %d)", write_ret, attempt + 1);
+            LOG_WRN("Register ID write error: %d (attempt %d)", write_ret, attempt + 1);
             k_msleep(10);
             continue;
         }
 
         k_msleep(10);
 
-        // 2. Lettura del valore ID
+        // 2. Reading the ID value
         uint8_t chip_id = 0;
         struct i2c_msg read_msg = {
             .buf = &chip_id,
@@ -267,35 +264,35 @@
             .flags = I2C_MSG_READ | I2C_MSG_STOP,
         };
 
-        LOG_INF("Lettura valore ID");
+        LOG_INF("Reading the ID value");
         int read_ret = i2c_transfer(i2c_dev, &read_msg, 1, bme280_i2c_addr);
 
         if (read_ret != 0) {
-            LOG_WRN("Errore lettura ID: %d (tentativo %d)", read_ret, attempt + 1);
+            LOG_WRN("ID read error: %d (attempt %d)", read_ret, attempt + 1);
             k_msleep(10);
             continue;
         }
 
-        LOG_INF("Chip ID letto: 0x%02X", chip_id);
+        LOG_INF("Chip ID read: 0x%02X", chip_id);
 
         if (chip_id == 0x60) {
-            LOG_INF("BME280 confermato all'indirizzo 0x%02X", bme280_i2c_addr);
+            LOG_INF("BME280 confirmed at the address 0x%02X", bme280_i2c_addr);
 
-            // Lettura dei parametri di calibrazione
+            // Reading the calibration parameters
             if (!read_calibration_data(i2c_dev)) {
-                LOG_ERR("Errore nella lettura dei parametri di calibrazione");
+                LOG_ERR("Error reading calibration parameters");
                 return false;
             }
 
             return true;
         } else {
-            LOG_WRN("ID non corrispondente a BME280 (0x%02X != 0x60)", chip_id);
+            LOG_WRN("ID does not match BME280 (0x%02X != 0x60)", chip_id);
         }
 
         k_msleep(20);
     }
 
-    LOG_ERR("Impossibile identificare il BME280 dopo multipli tentativi");
+    LOG_ERR("Unable to identify the BME280 after multiple attempts");
     return false;
 }
 
@@ -305,18 +302,18 @@
      uint8_t buf[8];
      int32_t adc_temp, adc_press, adc_hum;
      
-     /* Legge i dati grezzi */
+     /* Reads the raw data */
      if (i2c_burst_read(i2c_dev, bme280_i2c_addr, BME280_REG_PRESS_MSB, buf, 8) != 0) {
-         LOG_ERR("Impossibile leggere i dati del sensore");
+         LOG_ERR("Unable to read sensor data");
          return false;
      }
      
-     /* Estrae i valori ADC */
+     /* Extracts the ADC values */
      adc_press = ((uint32_t)buf[0] << 12) | ((uint32_t)buf[1] << 4) | (buf[2] >> 4);
      adc_temp = ((uint32_t)buf[3] << 12) | ((uint32_t)buf[4] << 4) | (buf[5] >> 4);
      adc_hum = ((uint32_t)buf[6] << 8) | buf[7];
      
-     /* Calcola i valori compensati */
+     /* Calculates the compensated values */
      data->temperature = compensate_temperature(adc_temp);
      data->pressure = compensate_pressure(adc_press);
      data->humidity = compensate_humidity(adc_hum);
