@@ -49,9 +49,9 @@
          LOG_ERR("Errore nella formattazione dei dati");
          return false;
      }
-    LOG_INF("Stringa completa da inviare: %s", tx_buf);
-    LOG_INF("Lunghezza messaggio formattato: %d", len);
-    LOG_INF("Ultimo carattere è: 0x%02X", tx_buf[len-1]);
+    //LOG_INF("Stringa completa da inviare: %s", tx_buf);
+    //LOG_INF("Lunghezza messaggio formattato: %d", len);
+    //LOG_INF("Ultimo carattere è: 0x%02X", tx_buf[len-1]);
 
      
     //LOG_INF("Ora entro nel for per inviare i dati\n");

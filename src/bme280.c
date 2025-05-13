@@ -321,8 +321,8 @@
      data->pressure = compensate_pressure(adc_press);
      data->humidity = compensate_humidity(adc_hum);
      
-     LOG_INF("T: %.2f°C, P: %.2f hPa, H: %.2f%%", 
-             data->temperature, data->pressure, data->humidity);
+    // LOG_INF("T: %.2f°C, P: %.2f hPa, H: %.2f%%", 
+      //       data->temperature, data->pressure, data->humidity);
      
      return true;
  }

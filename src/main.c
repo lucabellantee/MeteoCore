@@ -373,7 +373,7 @@ void prediction_thread(void *arg1, void *arg2, void *arg3)
 
         rain_prob = (float)predict_rain(&avg_data);
         LOG_INF("Media -> T: %.2fC, P: %.2f hPa, H: %.2f%%", avg_data.temperature, avg_data.pressure, avg_data.humidity);
-        LOG_INF("Probabilità pioggia (media): %.1f%%", rain_prob);
+        LOG_INF("Previsione pioggia: %.1f%%", rain_prob);
 
         if (!esp32_send_data(uart_dev, &avg_data, rain_prob)) {
             LOG_ERR("Errore invio dati ESP32");
