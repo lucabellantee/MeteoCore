@@ -1,0 +1,25 @@
+/dts-v1/;
+
+/ {
+    chosen {
+        zephyr,console = &uart0;
+        zephyr,shell-uart = &uart0;
+    };
+};
+
+&uart0 {
+    status = "okay";
+    current-speed = <115200>;
+    pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+    pinctrl-names = "default";
+};
+
+&pinctrl {
+    uart0_tx_gpio1: uart0_tx_gpio1 {
+        pinmux = <ESP32_PINMUX(1, UART_TX)>;
+    };
+
+    uart0_rx_gpio3: uart0_rx_gpio3 {
+        pinmux = <ESP32_PINMUX(3, UART_RX)>;
+    };
+};
