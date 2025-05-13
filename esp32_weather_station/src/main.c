@@ -1,359 +1,491 @@
 /**
- * ESP32 Weather Station - Ricevitore dati da STM32 e invio al database
- * Versione Zephyr RTOS
+ * Zephyr Weather Station - Integrazione con ThingSpeak
+ * 
+ * Riceve dati meteorologici via UART, li decodifica come JSON
+ * e li invia a ThingSpeak via HTTP GET.
  */
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/http/client.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/data/json.h>
+#include <sys/errno.h>  /* Per errno */
+#include "secrets.h"
 
- #include <zephyr/kernel.h>
- #include <zephyr/device.h>
- #include <zephyr/drivers/uart.h>
- #include <zephyr/net/net_if.h>
- #include <zephyr/net/wifi_mgmt.h>
- #include <zephyr/net/socket.h>
- #include <zephyr/logging/log.h>
- #include <zephyr/data/json.h>
- #include <string.h>
- #include <stdlib.h>
- #include <errno.h>  // Aggiunto per la variabile errno
- 
- LOG_MODULE_REGISTER(esp32_weather, LOG_LEVEL_INF);
- 
- /* Configurazione WiFi */
- #define WIFI_SSID "luca"
- #define WIFI_PSK "luca2303"
- 
- /* Configurazione server */
- #define SERVER_URL "192.168.116.5"
- #define SERVER_PORT 3000
- #define API_ENDPOINT "/api/data"
- 
- /* Configurazione UART - Utilizziamo UART2 che è sicuramente disponibile su ESP32 */
- #define UART_DEVICE_NAME "UART_2"
- 
- /* Dimensioni del buffer */
- #define RECV_BUFFER_SIZE 256
- #define JSON_BUFFER_SIZE 512
- 
- /* Struttura dati sensore */
- struct sensor_data {
-     float temperature;
-     float pressure;
-     float humidity;
-     float rain_probability;
- };
- 
- /* Thread stacks */
- #define WIFI_STACK_SIZE 2048
- #define UART_STACK_SIZE 2048
- #define HTTP_STACK_SIZE 2048
- 
- K_THREAD_STACK_DEFINE(wifi_stack, WIFI_STACK_SIZE);
- K_THREAD_STACK_DEFINE(uart_stack, UART_STACK_SIZE);
- K_THREAD_STACK_DEFINE(http_stack, HTTP_STACK_SIZE);
- 
- /* Thread data */
- struct k_thread wifi_thread_data;
- struct k_thread uart_thread_data;
- struct k_thread http_thread_data;
- 
- /* FIFO per comunicazione tra thread */
- K_FIFO_DEFINE(sensor_data_fifo);
- 
- /* Struttura per elemento FIFO */
- struct sensor_data_item {
-     void *fifo_reserved;
-     struct sensor_data data;
- };
- 
- /* Variabili globali */
- static const struct device *uart_dev;
- static bool wifi_connected = false;
- static char rx_buf[RECV_BUFFER_SIZE];
- static int rx_buf_pos = 0;
- 
- /* Prototipi delle funzioni */
- static void wifi_connect_thread(void *p1, void *p2, void *p3);
- static void uart_rx_thread(void *p1, void *p2, void *p3);
- static void http_client_thread(void *p1, void *p2, void *p3);
- static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
-                                   uint32_t mgmt_event,
-                                   struct net_if *iface);
- static void uart_rx_handler(const struct device *dev, void *user_data);
- static void parse_json_data(char *json_string, struct sensor_data *data);
- static void send_to_database(struct sensor_data *data);
- 
- /* Callback per eventi WiFi */
- static struct net_mgmt_event_callback wifi_cb;
- 
- void main(void)
- {
-     int ret;
- 
-     /* Inizializza UART */
-     uart_dev = device_get_binding(UART_DEVICE_NAME);
-     if (uart_dev == NULL) {
-         LOG_ERR("UART device '%s' not found", UART_DEVICE_NAME);
-         return;
-     }
- 
-     LOG_INF("UART device '%s' trovato", UART_DEVICE_NAME);
- 
-     /* Configura UART */
-     ret = uart_irq_callback_set(uart_dev, uart_rx_handler);
-     if (ret < 0) {
-         LOG_ERR("Cannot set UART callback (err: %d)", ret);
-         return;
-     }
- 
-     /* Abilita interrupt UART */
-     uart_irq_rx_enable(uart_dev);
- 
-     LOG_INF("ESP32 Weather Station - Zephyr Edition");
- 
-     /* Inizializza e avvia i thread */
-     k_tid_t wifi_tid = k_thread_create(&wifi_thread_data, wifi_stack,
-                                     K_THREAD_STACK_SIZEOF(wifi_stack),
-                                     wifi_connect_thread, NULL, NULL, NULL,
-                                     K_PRIO_PREEMPT(7), 0, K_NO_WAIT);
-     k_thread_name_set(wifi_tid, "wifi_thread");
- 
-     k_tid_t uart_tid = k_thread_create(&uart_thread_data, uart_stack,
-                                     K_THREAD_STACK_SIZEOF(uart_stack),
-                                     uart_rx_thread, NULL, NULL, NULL,
-                                     K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
-     k_thread_name_set(uart_tid, "uart_thread");
- 
-     k_tid_t http_tid = k_thread_create(&http_thread_data, http_stack,
-                                     K_THREAD_STACK_SIZEOF(http_stack),
-                                     http_client_thread, NULL, NULL, NULL,
-                                     K_PRIO_PREEMPT(9), 0, K_NO_WAIT);
-     k_thread_name_set(http_tid, "http_thread");
- }
- 
- /* Thread per la connessione WiFi */
- static void wifi_connect_thread(void *p1, void *p2, void *p3)
- {
-     struct net_if *iface;
-     struct wifi_connect_req_params wifi_params = {0};
-     int ret;
- 
-     /* Registra callback per eventi WiFi */
-     net_mgmt_init_event_callback(&wifi_cb, wifi_mgmt_event_handler,
-                               NET_EVENT_WIFI_CONNECT_RESULT);
-     net_mgmt_add_event_callback(&wifi_cb);
- 
-     /* Ottieni interfaccia WiFi */
-     iface = net_if_get_default();
-     if (!iface) {
-         LOG_ERR("Cannot get default network interface");
-         return;
-     }
- 
-     /* Configura parametri WiFi */
-     wifi_params.ssid = WIFI_SSID;
-     wifi_params.ssid_length = strlen(WIFI_SSID);
-     wifi_params.psk = WIFI_PSK;
-     wifi_params.psk_length = strlen(WIFI_PSK);
-     wifi_params.channel = WIFI_CHANNEL_ANY;
-     wifi_params.security = WIFI_SECURITY_TYPE_PSK;
- 
-     /* Connetti al WiFi */
-     LOG_INF("Connecting to WiFi: %s", WIFI_SSID);
-     ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &wifi_params, sizeof(wifi_params));
-     if (ret) {
-         LOG_ERR("Failed to connect to WiFi: %d", ret);
-         return;
-     }
- 
-     /* Attendi connessione WiFi */
-     while (!wifi_connected) {
-         k_sleep(K_MSEC(100));
-     }
- 
-     LOG_INF("WiFi connected");
- }
- 
- /* Thread per la ricezione UART */
- static void uart_rx_thread(void *p1, void *p2, void *p3)
- {
-     while (1) {
-         /* Il thread resta in esecuzione ma la ricezione dati è gestita 
-            dall'interrupt handler */
-         k_sleep(K_SECONDS(1));
-     }
- }
- 
- /* Thread per l'invio HTTP */
- static void http_client_thread(void *p1, void *p2, void *p3)
- {
-     struct sensor_data_item *rx_data;
- 
-     while (1) {
-         /* Attendi dati dalla FIFO */
-         rx_data = k_fifo_get(&sensor_data_fifo, K_FOREVER);
-         
-         if (rx_data) {
-             /* Invia i dati al database */
-             send_to_database(&rx_data->data);
-             
-             /* Libera la memoria */
-             k_free(rx_data);
-         }
-     }
- }
- 
- /* Handler per eventi WiFi */
- static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
-                                   uint32_t mgmt_event,
-                                   struct net_if *iface)
- {
-     if (mgmt_event == NET_EVENT_WIFI_CONNECT_RESULT) {
-         wifi_connected = true;
-     }
- }
- 
- /* Handler per ricezione UART */
- static void uart_rx_handler(const struct device *dev, void *user_data)
- {
-     uint8_t c;
- 
-     if (!uart_irq_update(dev)) {
-         return;
-     }
- 
-     if (!uart_irq_rx_ready(dev)) {
-         return;
-     }
- 
-     /* Leggi carattere */
-     while (uart_fifo_read(dev, &c, 1) == 1) {
-         LOG_DBG("RX: %c", c);
-         
-         /* Aggiungi al buffer */
-         if (rx_buf_pos < RECV_BUFFER_SIZE - 1) {
-             rx_buf[rx_buf_pos++] = c;
-             
-             /* Se troviamo un newline, i dati sono completi */
-             if (c == '\n') {
-                 rx_buf[rx_buf_pos] = '\0';  /* Termina la stringa */
-                 LOG_INF("Received data: %s", rx_buf);
-                 
-                 /* Alloca memoria per i dati del sensore */
-                 struct sensor_data_item *data_item = k_malloc(sizeof(struct sensor_data_item));
-                 if (!data_item) {
-                     LOG_ERR("Failed to allocate memory for sensor data");
-                     rx_buf_pos = 0;
-                     return;
-                 }
-                 
-                 /* Analizza i dati JSON */
-                 parse_json_data(rx_buf, &data_item->data);
-                 
-                 /* Invia i dati alla FIFO */
-                 k_fifo_put(&sensor_data_fifo, data_item);
-                 
-                 /* Resetta il buffer */
-                 rx_buf_pos = 0;
-             }
-         } else {
-             /* Buffer overflow */
-             LOG_ERR("Receive buffer overflow");
-             rx_buf_pos = 0;
-         }
-     }
- }
- 
- /* Parser JSON */
- static void parse_json_data(char *json_string, struct sensor_data *data)
- {
-     struct json_obj_descr sensor_descr[] = {
-         JSON_OBJ_DESCR_PRIM(struct sensor_data, temperature, JSON_TOK_FLOAT),
-         JSON_OBJ_DESCR_PRIM(struct sensor_data, pressure, JSON_TOK_FLOAT),
-         JSON_OBJ_DESCR_PRIM(struct sensor_data, humidity, JSON_TOK_FLOAT),
-         JSON_OBJ_DESCR_PRIM(struct sensor_data, rain_probability, JSON_TOK_FLOAT),
-     };
- 
-     int ret = json_obj_parse(json_string, strlen(json_string), 
-                           sensor_descr, ARRAY_SIZE(sensor_descr), data);
-                           
-     if (ret < 0) {
-         LOG_ERR("JSON parsing failed: %d", ret);
-         return;
-     }
- 
-     LOG_INF("Temperatura: %.2f°C", (double)data->temperature);
-     LOG_INF("Pressione: %.2f hPa", (double)data->pressure);
-     LOG_INF("Umidità: %.2f%%", (double)data->humidity);
-     LOG_INF("Prob. pioggia: %.2f%%", (double)data->rain_probability);
- }
- 
- /* Invia dati al database */
- static void send_to_database(struct sensor_data *data)
- {
-     int sock, ret;
-     struct sockaddr_in addr;
-     char json_buffer[JSON_BUFFER_SIZE];
-     char http_buffer[JSON_BUFFER_SIZE + 256];
-     
-     /* Verifica connessione WiFi */
-     if (!wifi_connected) {
-         LOG_ERR("WiFi not connected, cannot send data");
-         return;
-     }
-     
-     /* Formatta JSON */
-     snprintf(json_buffer, sizeof(json_buffer),
-            "{\"temperature\":%.2f,\"pressure\":%.2f,\"humidity\":%.2f,\"rain_probability\":%.2f,\"timestamp\":%llu}",
-            (double)data->temperature, (double)data->pressure, (double)data->humidity, 
-            (double)data->rain_probability, (unsigned long long)k_uptime_get());
- 
-     /* Crea socket */
-     sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-     if (sock < 0) {
-         LOG_ERR("Failed to create socket: %d", errno);
-         return;
-     }
- 
-     /* Configura endpoint */
-     memset(&addr, 0, sizeof(addr));
-     addr.sin_family = AF_INET;
-     addr.sin_port = htons(SERVER_PORT);
-     zsock_inet_pton(AF_INET, SERVER_URL, &addr.sin_addr);
- 
-     /* Connetti al server */
-     ret = zsock_connect(sock, (struct sockaddr *)&addr, sizeof(addr));
-     if (ret < 0) {
-         LOG_ERR("Failed to connect to server: %d", errno);
-         zsock_close(sock);
-         return;
-     }
- 
-     /* Crea richiesta HTTP */
-     snprintf(http_buffer, sizeof(http_buffer),
-            "POST %s HTTP/1.1\r\n"
-            "Host: %s:%d\r\n"
-            "Content-Type: application/json\r\n"
-            "Content-Length: %zu\r\n"
-            "\r\n"
-            "%s",
-            API_ENDPOINT, SERVER_URL, SERVER_PORT, strlen(json_buffer), json_buffer);
- 
-     /* Invia dati */
-     ret = zsock_send(sock, http_buffer, strlen(http_buffer), 0);
-     if (ret < 0) {
-         LOG_ERR("Failed to send data: %d", errno);
-         zsock_close(sock);
-         return;
-     }
- 
-     LOG_INF("Data sent to server (%d bytes)", ret);
- 
-     /* Ricevi risposta (opzionale) */
-     ret = zsock_recv(sock, http_buffer, sizeof(http_buffer) - 1, 0);
-     if (ret > 0) {
-         http_buffer[ret] = '\0';
-         LOG_INF("Server response: %s", http_buffer);
-     }
- 
-     /* Chiudi socket */
-     zsock_close(sock);
- }
+/* Configurazione logging */
+LOG_MODULE_REGISTER(weather_station, LOG_LEVEL_INF);
+
+/* Definizioni delle funzioni socket di Zephyr */
+#ifndef CONFIG_NET_SOCKETS_POSIX_NAMES
+#include <zephyr/posix/unistd.h>
+extern int zsock_socket(int family, int type, int proto);
+extern int zsock_connect(int sock, const struct sockaddr *addr, socklen_t addrlen);
+extern int zsock_close(int sock);
+#define socket zsock_socket
+#define connect zsock_connect
+#define close zsock_close
+#endif
+
+/* Configurazione WiFi - Usa i valori dal tuo secrets.h */
+#define WIFI_SSID WIFI_ID               
+#define WIFI_PSK WIFI_PASSWORD          
+
+/* Configurazione server e API */
+#define THINGSPEAK_API_KEY THING_SPEAK_API   
+#define SERVER_ADDRESS SERVER_THINGSPEAK_API              // QUESTO DA RIVEDERE 
+
+/* UART */
+#define UART_DEVICE_NAME "UART_0"  // Nome del device UART disponibile
+#define UART_BUFFER_SIZE 256
+
+/* Networking */
+#define HTTP_TIMEOUT_MS 10000
+
+/* Thread e sincronizzazione */
+#define STACK_SIZE 2048
+#define THREAD_PRIORITY 5
+K_MSGQ_DEFINE(uart_msgq, UART_BUFFER_SIZE, 10, 4);
+
+/* Struttura dati meteo */
+struct weather_data {
+    double temperature;
+    double pressure;
+    double humidity;
+    double rain_probability;
+};
+
+/* JSON parsing descr */
+static const struct json_obj_descr weather_data_descr[] = {
+    JSON_OBJ_DESCR_PRIM(struct weather_data, temperature, JSON_TOK_NUMBER),
+    JSON_OBJ_DESCR_PRIM(struct weather_data, pressure, JSON_TOK_NUMBER),
+    JSON_OBJ_DESCR_PRIM(struct weather_data, humidity, JSON_TOK_NUMBER),
+    JSON_OBJ_DESCR_PRIM(struct weather_data, rain_probability, JSON_TOK_NUMBER)
+};
+
+/* Globali */
+static const struct device *uart_dev;
+static char rx_buf[UART_BUFFER_SIZE];
+static int rx_buf_pos;
+static bool connected;
+
+/* Callback per la ricezione UART */
+static void uart_cb(const struct device *dev, void *user_data)
+{
+    uint8_t c;
+
+    if (!uart_irq_update(dev)) {
+        return;
+    }
+
+    if (uart_irq_rx_ready(dev)) {
+        while (uart_fifo_read(dev, &c, 1) == 1) {
+            rx_buf[rx_buf_pos++] = c;
+
+            if (c == '\n' || rx_buf_pos == UART_BUFFER_SIZE - 1) {
+                rx_buf[rx_buf_pos] = '\0';
+                
+                /* Invia il buffer alla coda messaggi */
+                if (k_msgq_put(&uart_msgq, &rx_buf, K_NO_WAIT) != 0) {
+                    LOG_ERR("Impossibile accodare messaggio UART");
+                }
+                
+                /* Reset del buffer */
+                rx_buf_pos = 0;
+            }
+        }
+    }
+}
+
+/* Inizializzazione dell'UART */
+static int uart_init(void)
+{
+    uart_dev = device_get_binding(UART_DEVICE_NAME);
+    if (!uart_dev) {
+        LOG_ERR("UART device non trovato");
+        return -ENODEV;
+    }
+
+    uart_irq_callback_set(uart_dev, uart_cb);
+    uart_irq_rx_enable(uart_dev);
+
+    rx_buf_pos = 0;
+    return 0;
+}
+
+/* Connessione WiFi */
+static int wifi_connect(void)
+{
+    struct net_if *iface = net_if_get_default();
+    if (!iface) {
+        LOG_ERR("Interfaccia di rete non trovata");
+        return -ENODEV;
+    }
+
+    struct wifi_connect_req_params params = {
+        .ssid = WIFI_SSID,
+        .ssid_length = strlen(WIFI_SSID),
+        .psk = WIFI_PSK,
+        .psk_length = strlen(WIFI_PSK),
+        .channel = WIFI_CHANNEL_ANY,
+        .security = WIFI_SECURITY_TYPE_PSK,
+    };
+
+    LOG_INF("Connessione al WiFi %s...", WIFI_SSID);
+    if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &params, sizeof(params))) {
+        LOG_ERR("Connessione WiFi fallita");
+        return -ENOEXEC;
+    }
+
+    connected = true;
+    LOG_INF("WiFi connesso");
+    return 0;
+}
+
+/* Parsing JSON */
+static int parse_json(char *json_string, struct weather_data *data)
+{
+    int ret;
+
+    ret = json_obj_parse(json_string, strlen(json_string), 
+                        weather_data_descr, 
+                        ARRAY_SIZE(weather_data_descr),
+                        data);
+
+    if (ret < 0) {
+        LOG_ERR("Errore di parsing JSON: %d", ret);
+        return -EINVAL;
+    }
+
+    if (ret < ARRAY_SIZE(weather_data_descr)) {
+        LOG_WRN("Alcuni campi JSON non sono stati analizzati, ret = %d", ret);
+    }
+
+    return 0;
+}
+
+/* Callback per risposta HTTP */
+static void http_response_cb(struct http_response *rsp,
+                            enum http_final_call final_data,
+                            void *user_data)
+{
+    if (final_data == HTTP_DATA_FINAL) {
+        LOG_INF("Risposta server: %d", rsp->http_status_code);
+        /* Non possiamo accedere direttamente al contenuto della risposta in questo modo */
+    }
+}
+
+/* Parse URL to extract host, port and path */
+static int parse_url(const char *url, char *host, size_t host_len, 
+                    uint16_t *port, char *path, size_t path_len)
+{
+    /* Skip http:// or https:// */
+    const char *start = url;
+    if (strncmp(url, "http://", 7) == 0) {
+        start = url + 7;
+        *port = 80;
+    } else if (strncmp(url, "https://", 8) == 0) {
+        start = url + 8;
+        *port = 443;
+    } else {
+        *port = 80;  /* Default to HTTP port */
+    }
+
+    /* Find path part (after first '/' after host) */
+    const char *path_start = strchr(start, '/');
+    if (path_start == NULL) {
+        /* No path, use root */
+        strncpy(path, "/", path_len);
+        path_start = start + strlen(start);
+    } else {
+        strncpy(path, path_start, path_len);
+    }
+
+    /* Extract host */
+    size_t host_part_len = path_start - start;
+    if (host_part_len >= host_len) {
+        return -EINVAL;  /* Host buffer too small */
+    }
+    
+    strncpy(host, start, host_part_len);
+    host[host_part_len] = '\0';
+
+    /* Check for port specification */
+    char *port_start = strchr(host, ':');
+    if (port_start != NULL) {
+        *port_start = '\0';  /* Terminate host name before port */
+        *port = (uint16_t)strtol(port_start + 1, NULL, 10);
+    }
+
+    return 0;
+}
+
+/* Invia dati al server specificato in SERVER_URL */
+static int send_data_to_server(struct weather_data *data)
+{
+    struct http_request req;
+    int sock;
+    int ret;
+    char url_path[128];
+    char host[64];
+    uint16_t port;
+    char payload[256];
+    struct sockaddr_in addr;
+
+    /* Verifica connessione WiFi */
+    if (!connected) {
+        LOG_INF("WiFi disconnesso. Tentativo di riconnessione...");
+        if (wifi_connect() != 0) {
+            LOG_ERR("Impossibile riconnettersi al WiFi");
+            return -ENETUNREACH;
+        }
+    }
+
+    /* Parse dell'URL del server */
+    ret = parse_url(SERVER_ADDRESS, host, sizeof(host), &port, url_path, sizeof(url_path));
+    if (ret < 0) {
+        LOG_ERR("Errore nel parsing dell'URL: %d", ret);
+        return ret;
+    }
+
+    LOG_INF("Connessione a host: %s, porta: %d, path: %s", host, port, url_path);
+
+    /* Costruisci il payload JSON */
+    snprintf(payload, sizeof(payload),
+             "{\"temperature\":%.2f,\"pressure\":%.2f,\"humidity\":%.2f,\"rain\":%d}",
+             data->temperature,
+             data->pressure,
+             data->humidity,
+             (int)data->rain_probability);
+
+    LOG_INF("Payload: %s", payload);
+
+    /* Risolvi il DNS e prepara l'indirizzo */
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+
+    /* Se l'indirizzo è numerico, lo converte direttamente */
+    ret = net_addr_pton(AF_INET, "192.168.63.121", &addr.sin_addr);
+    if (ret < 0) {
+        LOG_ERR("Conversione indirizzo IP fallita: %d", ret);
+        return -EINVAL;
+    }
+
+    /* Crea il socket */
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#else
+    sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#endif
+    if (sock < 0) {
+        LOG_ERR("Creazione socket fallita: %d", errno);
+        return -errno;
+    }
+
+    /* Connettiti al server */
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+    ret = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+#else
+    ret = zsock_connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+#endif
+    if (ret < 0) {
+        LOG_ERR("Connessione al server fallita: %d", errno);
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+        close(sock);
+#else
+        zsock_close(sock);
+#endif
+        return -errno;
+    }
+
+    /* Prepara la richiesta HTTP */
+    memset(&req, 0, sizeof(req));
+    req.method = HTTP_POST;
+    req.url = url_path;
+    req.host = host;
+    req.protocol = "HTTP/1.1";
+    req.payload = payload;
+    req.payload_len = strlen(payload);
+    req.header_fields = "Content-Type: application/json\r\n";
+    req.response = http_response_cb;
+    
+    /* Invia la richiesta */
+    ret = http_client_req(sock, &req, HTTP_TIMEOUT_MS, NULL);
+    
+    if (ret >= 0) {
+        LOG_INF("Richiesta HTTP inviata con successo");
+    } else {
+        LOG_ERR("Errore nella richiesta HTTP: %d", ret);
+    }
+
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+    close(sock);
+#else
+    zsock_close(sock);
+#endif
+    return ret;
+}
+
+/* Invia dati a ThingSpeak */
+static int send_to_thingspeak(struct weather_data *data)
+{
+    struct http_request req;
+    int sock;
+    int ret;
+    char url[256];
+
+    /* Verifica connessione WiFi */
+    if (!connected) {
+        LOG_INF("WiFi disconnesso. Tentativo di riconnessione...");
+        if (wifi_connect() != 0) {
+            LOG_ERR("Impossibile riconnettersi al WiFi");
+            return -ENETUNREACH;
+        }
+    }
+
+    /* Costruisci l'URL con i parametri */
+    snprintf(url, sizeof(url),
+        "/update?api_key=%s&field1=%.2f&field2=%.2f&field3=%.2f&field4=%d",
+        THINGSPEAK_API_KEY,
+        data->temperature,
+        data->pressure,
+        data->humidity,
+        (int)data->rain_probability);
+
+    LOG_INF("URL ThingSpeak: %s", url);
+
+    /* Connetti al server ThingSpeak */
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(80);
+    
+    /* Risolvi DNS (in un'applicazione reale dovresti usare getaddrinfo) */
+    ret = net_addr_pton(AF_INET, "184.106.153.149", &addr.sin_addr); /* IP di api.thingspeak.com */
+    if (ret < 0) {
+        LOG_ERR("Conversione indirizzo IP fallita: %d", ret);
+        return -EINVAL;
+    }
+    
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#else
+    sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#endif
+    if (sock < 0) {
+        LOG_ERR("Creazione socket fallita: %d", errno);
+        return -errno;
+    }
+
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+    ret = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+#else
+    ret = zsock_connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+#endif
+    if (ret < 0) {
+        LOG_ERR("Connessione al server ThingSpeak fallita: %d", errno);
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+        close(sock);
+#else
+        zsock_close(sock);
+#endif
+        return -errno;
+    }
+
+    /* Prepara la richiesta HTTP */
+    memset(&req, 0, sizeof(req));
+    req.method = HTTP_GET;
+    req.url = url;
+    req.host = "api.thingspeak.com";
+    req.protocol = "HTTP/1.1";
+    req.payload = NULL;
+    req.payload_len = 0;
+    req.response = http_response_cb;
+    
+    /* Invia la richiesta */
+    ret = http_client_req(sock, &req, HTTP_TIMEOUT_MS, NULL);
+    
+    if (ret >= 0) {
+        LOG_INF("Richiesta ThingSpeak inviata con successo");
+    } else {
+        LOG_ERR("Errore ThingSpeak: %d", ret);
+    }
+
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+    close(sock);
+#else
+    zsock_close(sock);
+#endif
+    return ret;
+}
+
+/* Thread principale */
+void main_thread(void *p1, void *p2, void *p3)
+{
+    char uart_buf[UART_BUFFER_SIZE];
+    struct weather_data data;
+    int ret;
+
+    ARG_UNUSED(p1);
+    ARG_UNUSED(p2);
+    ARG_UNUSED(p3);
+
+    LOG_INF("Zephyr Weather Station");
+
+    /* Inizializza UART */
+    if (uart_init() != 0) {
+        LOG_ERR("Errore inizializzazione UART");
+        return;
+    }
+
+    /* Connessione WiFi */
+    if (wifi_connect() != 0) {
+        LOG_ERR("Errore connessione WiFi");
+        return;
+    }
+
+    while (1) {
+        /* Aspetta messaggio dalla coda UART */
+        if (k_msgq_get(&uart_msgq, &uart_buf, K_FOREVER) == 0) {
+            LOG_INF("Dati ricevuti: %s", uart_buf);
+
+            ret = parse_json(uart_buf, &data);
+            if (ret == 0) {
+                LOG_INF("Temperatura: %.2f°C", data.temperature);
+                LOG_INF("Pressione: %.2f hPa", data.pressure);
+                LOG_INF("Umidità: %.2f%%", data.humidity);
+                LOG_INF("Pioggia prevista: %d", (int)data.rain_probability);
+
+                /* Invia dati a ThingSpeak */
+                ret = send_to_thingspeak(&data);
+                if (ret < 0) {
+                    LOG_ERR("Errore invio dati a ThingSpeak: %d", ret);
+                }
+
+                /* Invia dati al server personalizzato */
+                ret = send_data_to_server(&data);
+                if (ret < 0) {
+                    LOG_ERR("Errore invio dati al server: %d", ret);
+                }
+            } else {
+                LOG_ERR("Errore parsing JSON: %d", ret);
+            }
+        }
+    }
+}
+
+/* Definizione thread principale */
+K_THREAD_DEFINE(main_id, STACK_SIZE, main_thread, NULL, NULL, NULL,
+                THREAD_PRIORITY, 0, 0);
+
+/* Funzione main - necessaria ma può restare vuota, il thread principale è già avviato */
+int main(void)
+{
+    /* Il thread principale è già stato avviato dal kernel */
+    return 0;
+}

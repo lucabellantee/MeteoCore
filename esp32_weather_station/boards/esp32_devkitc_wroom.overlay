@@ -1,0 +1,25 @@
+/ {
+    chosen {
+        zephyr,console = &uart0;
+        zephyr,shell-uart = &uart0;
+    };
+
+    aliases {
+        // Aggiungi un alias per la UART che userai per i dati meteo
+        // Qui stiamo usando uart1 per i dati meteo
+        meteo-uart = &uart1;
+    };
+};
+
+&uart0 {
+    status = "okay";
+    current-speed = <115200>;
+};
+
+&uart1 {
+    status = "okay";
+    current-speed = <115200>;
+    // Specifica i pin RX/TX per corrispondere al tuo hardware
+    tx-pin = <17>;  // TXD2 del codice originale
+    rx-pin = <16>;  // RXD2 del codice originale
+};
