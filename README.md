@@ -1,6 +1,12 @@
 # Weather Prediction Embedded System 🌦️
 
-Questo progetto consiste in un **dispositivo embedded per il monitoraggio ambientale** e la **previsione della pioggia imminente**. È basato su due microcontrollori — uno STM32F446RE e un ESP32-WROOM-32E — e utilizza un sensore ambientale BME280. Il sistema è progettato per operare in modo autonomo e inviare periodicamente dati meteorologici e predizioni a una piattaforma cloud.
+Questo progetto sviluppa un dispositivo embedded per il monitoraggio ambientale e la previsione della pioggia imminente, utilizzando i microcontrollori STM32F446RE e ESP32-WROOM-32E, insieme al sensore BME280 che misura temperatura, pressione e umidità. Il sistema è progettato per raccogliere i dati meteorologici in tempo reale e, utilizzando un modello di Machine Learning pre-addestrato, fare una previsione sulla probabilità di pioggia.
+
+## Integrazione con Zephyr RTOS
+Il cuore del sistema è basato su Zephyr RTOS, che viene eseguito sul microcontrollore STM32F446RE. Questo permette una gestione efficiente delle operazioni in tempo reale, come la lettura dei sensori, l'elaborazione dei dati e l'invio dei risultati tramite UART all'ESP32. Il modello di Machine Learning (un albero decisionale) è integrato direttamente nel firmware STM32, il quale elabora le letture meteorologiche per fare una previsione basata su dati storici.
+
+## Comunicazione e Integrazione con ThingSpeak
+L'ESP32-WROOM-32E funge da gateway per inviare i dati dal sistema embedded alla piattaforma ThingSpeak per la visualizzazione e l'analisi dei dati in tempo reale. L'ESP32 riceve i dati da STM32 tramite UART, li codifica in formato JSON e li invia via HTTP POST a ThingSpeak, dove possono essere monitorati e analizzati.
 
 ---
 
@@ -37,20 +43,18 @@ Questo progetto consiste in un **dispositivo embedded per il monitoraggio ambien
 3. Apri **Arduino IDE**, carica e apri il file:
 
     ```
-    esp32_weather_station/ESP_32_Configuration.ino
+    thingspeak/thingspeak.ino
     ```
-
-4. All’interno del file `.ino`, **modifica l’indirizzo IP** con quello del tuo hotspot/router o del server ThingSpeak.
-5. Carica il programma sull’**ESP32** tramite Arduino IDE.
+4. Carica il programma sull’**ESP32** tramite Arduino IDE.
 
 
 
 ### ✅ 2. Compilazione e flash STM32 (Zephyr)
 
-1. Apri il **terminale** in **Visual Studio Code** nella cartella principale del progetto.
+1. Apri il **terminale** nella cartella principale del progetto.
 2. Esegui i seguenti comandi per attivare l’ambiente Zephyr:
 
-    ```powershell
+    ```bash
     C:\zephyrproject\.venv\Scripts\activate.bat
     ```
 
@@ -95,16 +99,14 @@ Il modello è **statico** (codificato nel firmware STM32) e al momento **non pre
 
 ## ✅ TODO (sviluppi futuri)
 
-- [ ] **Logging locale** dei dati su SD o memoria flash.
-- [ ] **Aggiornamento dinamico** del modello ML via rete.
-- [ ] **Interfaccia web** per visualizzazione in tempo reale dei dati.
-- [ ] **Notifiche push** in caso di pioggia imminente.
+- [ ] Migliorare app
+- [ ] Zephyr su esp32
 
 ---
 
 ## 👨‍💻 Autori
 
-Progetto sviluppato nell’ambito del corso di **Sistemi Embedded** – Ingegneria Informatica, Università di [Inserisci nome].
+
 
 ---
 
