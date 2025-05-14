@@ -3,3 +3,5 @@ secrets.h
 zephyr-env.cmd
 /Server/node_modules/
 /build
+/esp32_weather_station
+/esp32_zephyr_attempt
