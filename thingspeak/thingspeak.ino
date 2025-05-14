@@ -87,7 +87,7 @@ void sendToThingSpeak(float temp, float press, float hum, float rain) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi disconnected. Reconnecting...");
     WiFi.reconnect();
-    delay(5000);
+    //delay(5000);
     if (WiFi.status() != WL_CONNECTED) {
       Serial.println("Unable to reconnect to WiFi.");
       return;
