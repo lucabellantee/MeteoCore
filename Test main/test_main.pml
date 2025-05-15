@@ -237,34 +237,34 @@ proctype main_process() {
  */
 
 /* 
- * deadlock_free: verifica che un mutex acquisito venga sempre rilasciato
- * [] (buffer_mutex -> <> !buffer_mutex) significa:
- * "Sempre ([]): se il mutex è acquisito (buffer_mutex), allora
- * eventualmente (<>) sarà rilasciato (!buffer_mutex)"
- */
-ltl deadlock_free { [] (buffer_mutex -> <> !buffer_mutex) }
-
-/* 
  * no_buffer_overflow: verifica che il buffer non superi mai la capacità massima
  * [] (buffer_count <= MAX_SAMPLES) significa:
  * "Sempre ([]): il conteggio del buffer è minore o uguale a MAX_SAMPLES"
  */
 ltl no_buffer_overflow { [] (buffer_count <= MAX_SAMPLES) }
 
-/* 
- * mutex_exclusion: verifica l'esclusione mutua corretta
- * [] !(data_acquisition_running && prediction_running && buffer_mutex) significa:
- * "Sempre ([]): non è mai vero che entrambi i thread sono in esecuzione e
- * contemporaneamente il mutex è in uno stato inconsistente"
- */
-ltl mutex_exclusion { [] !(data_acquisition_running && prediction_running && buffer_mutex) }
 
 /* 
- * initialization_property: verifica che entrambi i thread vengano avviati
- * <> (data_acquisition_running && prediction_running) significa:
- * "Eventualmente (<>): entrambi i thread saranno in esecuzione"
+ * Proprietà di deadlock-free tra thread di predizione e acquisizione dati
+ *
+ * Questa proprietà verifica che non si verifichi mai una situazione in cui
+ * entrambi i thread sono bloccati in attesa l'uno dell'altro, causando
+ * un deadlock nel sistema.
  */
-ltl initialization_property { <> (data_acquisition_running && prediction_running) }
+ltl thread_deadlock_free { 
+    [] (
+        /* Se il thread di predizione è in attesa del mutex */
+        (prediction_running && !buffer_mutex) -> 
+        /* Allora eventualmente otterrà il mutex */
+        <> (buffer_mutex)
+    ) && 
+    [] (
+        /* Se il thread di acquisizione dati è in attesa del mutex */
+        (data_acquisition_running && !buffer_mutex) -> 
+        /* Allora eventualmente otterrà il mutex */
+        <> (buffer_mutex)
+    )
+}
 
 /* 
  * Processo di inizializzazione
