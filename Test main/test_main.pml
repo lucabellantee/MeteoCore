@@ -68,13 +68,38 @@ bool sensor_read_error = false;     /* Errore di lettura del sensore */
 bool esp32_send_error = false;      /* Errore di invio dati all'ESP32 */
 
 /* 
+ * Variabili aggiuntive per tracciare l'accesso ai thread alla sezione critica
+ * Usate per verificare le proprietà di mutual exclusion e fairness
+ */
+bool data_acquisition_in_critical = false;  /* Thread di acquisizione nella sezione critica */
+bool prediction_in_critical = false;        /* Thread di previsione nella sezione critica */
+bool data_acquisition_waiting = false;      /* Thread di acquisizione in attesa del mutex */
+bool prediction_waiting = false;            /* Thread di previsione in attesa del mutex */
+
+/* 
  * Funzione inline per le operazioni di mutex
  * Implementa l'acquisizione atomica del mutex con attesa attiva
  */
-inline lock_mutex() {
+inline lock_mutex(thread_id) {
   atomic {
+    /* Imposta il flag di attesa per il thread */
+    if
+    :: thread_id == 1 -> data_acquisition_waiting = true;
+    :: thread_id == 2 -> prediction_waiting = true;
+    fi;
+    
     /* Attende fino a quando il mutex è libero, poi lo blocca atomicamente */
     !buffer_mutex -> buffer_mutex = true;
+    
+    /* Rimuove il flag di attesa e imposta quello di sezione critica */
+    if
+    :: thread_id == 1 -> 
+      data_acquisition_waiting = false;
+      data_acquisition_in_critical = true;
+    :: thread_id == 2 -> 
+      prediction_waiting = false;
+      prediction_in_critical = true;
+    fi;
   }
 }
 
@@ -82,8 +107,15 @@ inline lock_mutex() {
  * Funzione inline per rilasciare il mutex
  * Imposta semplicemente il flag del mutex a false (sbloccato)
  */
-inline unlock_mutex() {
-  buffer_mutex = false;
+inline unlock_mutex(thread_id) {
+  atomic {
+    buffer_mutex = false;
+    /* Rimuove il flag di sezione critica */
+    if
+    :: thread_id == 1 -> data_acquisition_in_critical = false;
+    :: thread_id == 2 -> prediction_in_critical = false;
+    fi;
+  }
 }
 
 /* 
@@ -123,7 +155,7 @@ proctype data_acquisition_thread() {
     if
     :: !i2c_error -> /* Se non ci sono errori I2C */
       /* Acquisisce il mutex per accedere al buffer condiviso */
-      lock_mutex();
+      lock_mutex(1);
       
       /* Aggiunge i dati al buffer se c'è spazio disponibile */
       if
@@ -133,7 +165,7 @@ proctype data_acquisition_thread() {
       fi;
       
       /* Rilascia il mutex dopo aver aggiornato il buffer */
-      unlock_mutex();
+      unlock_mutex(1);
     :: else -> /* Se c'è un errore I2C */
       sensor_read_error = true; /* Imposta il flag di errore di lettura */
     fi;
@@ -159,7 +191,7 @@ proctype prediction_thread() {
   do
   :: true -> /* Loop forever */
     /* Acquisisce il mutex per accedere al buffer condiviso */
-    lock_mutex();
+    lock_mutex(2);
     
     /* Verifica se ci sono dati da elaborare */
     if
@@ -176,7 +208,7 @@ proctype prediction_thread() {
     fi;
     
     /* Rilascia il mutex dopo aver elaborato i dati */
-    unlock_mutex();
+    unlock_mutex(2);
     
     /* Simula l'attesa per il prossimo intervallo di previsione */
     skip; /* Rappresenta k_sleep(K_MSEC(PREDICTION_INTERVAL_MS)) */
@@ -243,7 +275,6 @@ proctype main_process() {
  */
 ltl no_buffer_overflow { [] (buffer_count <= MAX_SAMPLES) }
 
-
 /* 
  * Proprietà di deadlock-free tra thread di predizione e acquisizione dati
  *
@@ -264,6 +295,19 @@ ltl thread_deadlock_free {
         /* Allora eventualmente otterrà il mutex */
         <> (buffer_mutex)
     )
+}
+
+
+
+/*
+ * Proprietà di mutua esclusione (mutual exclusion)
+ * 
+ * Questa proprietà verifica che i due thread non accedano mai
+ * contemporaneamente alla sezione critica (buffer condiviso).
+ * In ogni momento, al massimo un thread può essere nella sezione critica.
+ */
+ltl mutual_exclusion {
+    [] !(data_acquisition_in_critical && prediction_in_critical)
 }
 
 /* 
