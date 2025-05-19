@@ -60,12 +60,9 @@ void data_acquisition_thread(void *arg1, void *arg2, void *arg3)
     bme280_data_t sensor_data;
 
     k_sem_take(&init_sem, K_FOREVER);
-    LOG_INF("Reading thread started");
 
     while (1) {
         if (bme280_read_data(i2c_dev, &sensor_data)) {
-            LOG_INF("T: %.2fC, P: %.2f hPa, H: %.2f%%",
-                    sensor_data.temperature, sensor_data.pressure, sensor_data.humidity);
 
             k_mutex_lock(&buffer_mutex, K_FOREVER);
             if (sensor_buffer.count < MAX_SAMPLES) {
@@ -77,7 +74,7 @@ void data_acquisition_thread(void *arg1, void *arg2, void *arg3)
             }
             k_mutex_unlock(&buffer_mutex);
         } else {
-            LOG_ERR("Sensor read error");
+            //LOG_ERR("Sensor read error");
         }
 
         k_sleep(K_MSEC(SAMPLING_INTERVAL_MS));
@@ -104,7 +101,6 @@ void prediction_thread(void *arg1, void *arg2, void *arg3)
     float rain_prob;
 
     k_sem_take(&init_sem, K_FOREVER);
-    LOG_INF("Prediction thread started");
 
     while (1) {
         k_mutex_lock(&buffer_mutex, K_FOREVER);
@@ -126,11 +122,8 @@ void prediction_thread(void *arg1, void *arg2, void *arg3)
         }
 
         rain_prob = (float)predict_rain(&avg_data);
-        LOG_INF("Average -> T: %.2fC, P: %.2f hPa, H: %.2f%%", avg_data.temperature, avg_data.pressure, avg_data.humidity);
-        LOG_INF("Rain prediction: %.1f%%", rain_prob);
 
         if (!esp32_send_data(uart_dev, &avg_data, rain_prob)) {
-            LOG_ERR("Error sending data to ESP32");
         }
         k_mutex_unlock(&buffer_mutex);
 
@@ -171,7 +164,6 @@ void main(void)
         return;
     }
 
-    LOG_INF("Devices initialized");
     k_sem_give(&init_sem);
     k_sem_give(&init_sem);
 

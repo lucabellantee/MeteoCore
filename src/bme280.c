@@ -84,7 +84,6 @@
      
      /* Reads the first calibration parameters (0x88-0x9F) */
      if (i2c_burst_read(i2c_dev, bme280_i2c_addr, 0x88, buf, 24) != 0) {
-         LOG_ERR("Unable to read calibration parameters");
          return false;
      }
      
@@ -104,13 +103,11 @@
      
      /* Reads parameter dig_h1 */
      if (bme280_read_reg(i2c_dev, 0xA1, &calib_data.dig_h1) != 0) {
-         LOG_ERR("Unable to read dig_h1");
          return false;
      }
      
      /* Reads humidity calibration parameters */
      if (i2c_burst_read(i2c_dev, bme280_i2c_addr, 0xE1, buf, 7) != 0) {
-         LOG_ERR("Unable to read humidity calibration parameters");
          return false;
      }
      
@@ -197,13 +194,11 @@
  bool bme280_init(const struct device *i2c_dev)
 {
     if (!device_is_ready(i2c_dev)) {
-        LOG_ERR("I2C device not ready");
         return false;
     }
 
     k_msleep(200);  
 
-    LOG_INF("Starting BME280 scan...");
 
     // Scan on both possible addresses (0x76, 0x77)
     for (uint8_t addr = 0x76; addr <= 0x77; addr++) {
@@ -215,17 +210,14 @@
         };
 
         int ret = i2c_transfer(i2c_dev, &ping_msg, 1, addr);
-        LOG_INF("Test address 0x%02X: %d", addr, ret);
 
         if (ret == 0) {
             bme280_i2c_addr = addr;
-            LOG_INF("Device responds to the address 0x%02X", addr);
             break;
         }
     }
 
     if (bme280_i2c_addr == 0) {
-        LOG_ERR("No I2C device found at BME280 addresses");
         return false;
     }
 
@@ -245,11 +237,9 @@
             .flags = I2C_MSG_WRITE | I2C_MSG_STOP,
         };
 
-        LOG_INF("Sending register address ID 0xD0");
         int write_ret = i2c_transfer(i2c_dev, &write_msg, 1, bme280_i2c_addr);
 
         if (write_ret != 0) {
-            LOG_WRN("Register ID write error: %d (attempt %d)", write_ret, attempt + 1);
             k_msleep(10);
             continue;
         }
@@ -264,35 +254,28 @@
             .flags = I2C_MSG_READ | I2C_MSG_STOP,
         };
 
-        LOG_INF("Reading the ID value");
         int read_ret = i2c_transfer(i2c_dev, &read_msg, 1, bme280_i2c_addr);
 
         if (read_ret != 0) {
-            LOG_WRN("ID read error: %d (attempt %d)", read_ret, attempt + 1);
             k_msleep(10);
             continue;
         }
 
-        LOG_INF("Chip ID read: 0x%02X", chip_id);
 
         if (chip_id == 0x60) {
-            LOG_INF("BME280 confirmed at the address 0x%02X", bme280_i2c_addr);
 
             // Reading the calibration parameters
             if (!read_calibration_data(i2c_dev)) {
-                LOG_ERR("Error reading calibration parameters");
                 return false;
             }
 
             return true;
         } else {
-            LOG_WRN("ID does not match BME280 (0x%02X != 0x60)", chip_id);
         }
 
         k_msleep(20);
     }
 
-    LOG_ERR("Unable to identify the BME280 after multiple attempts");
     return false;
 }
 
@@ -304,7 +287,6 @@
      
      /* Reads the raw data */
      if (i2c_burst_read(i2c_dev, bme280_i2c_addr, BME280_REG_PRESS_MSB, buf, 8) != 0) {
-         LOG_ERR("Unable to read sensor data");
          return false;
      }
      
@@ -318,8 +300,7 @@
      data->pressure = compensate_pressure(adc_press);
      data->humidity = compensate_humidity(adc_hum);
      
-    // LOG_INF("T: %.2f°C, P: %.2f hPa, H: %.2f%%", 
-      //       data->temperature, data->pressure, data->humidity);
+
      
      return true;
  }

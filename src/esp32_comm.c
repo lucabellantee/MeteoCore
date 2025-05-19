@@ -19,7 +19,6 @@
  bool esp32_comm_init(const struct device *uart_dev)
  {
      if (!device_is_ready(uart_dev)) {
-         LOG_ERR("UART device not ready");
          return false;
      }
      
@@ -27,7 +26,6 @@
      /* Note: in Zephyr, the basic configuration is usually managed
         by the device configuration in the Device Tree */
      
-     LOG_INF("UART communication with ESP32 initialized");
      return true;
  }
  
@@ -46,24 +44,13 @@
                 (double)rain_probability);
      
      if (len < 0 || len >= sizeof(tx_buf)) {
-         LOG_ERR("Error in data formatting");
          return false;
      }
-    //LOG_INF("Complete string to send: %s", tx_buf);
-    //LOG_INF("Formatted message length: %d", len);
-    //LOG_INF("Last character is: 0x%02X", tx_buf[len-1]);
 
-     
-    //LOG_INF("Now entering the for loop to send data\n");
      /* Sends data via UART */
      for (int i = 0; i < len; i++) {
-         //LOG_INF("Character: %c\n", tx_buf[i]);
          uart_poll_out(uart_dev, tx_buf[i]);
-         //uart_poll_out(uart_dev, 'a');
-         //LOG_INF("Data sent!\n");
-         //k_sleep(K_MSEC(1));  // Adds a 1ms delay between characters
      }
      
-     LOG_DBG("Data sent to ESP32: %s", tx_buf);
      return true;
  }
