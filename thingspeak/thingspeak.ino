@@ -66,11 +66,6 @@ void loop() {
       float humidity = doc["hum"];
       float rainProb = doc["rain"];
 
-      Serial.println("Temperature: " + String(temperature) + "°C");
-      Serial.println("Pressure: " + String(pressure) + " hPa");
-      Serial.println("Humidity: " + String(humidity) + "%");
-      Serial.println("Predicted rain: " + String((int)rainProb));
-
       sendToThingSpeak(temperature, pressure, humidity, rainProb);
     }
 
@@ -85,11 +80,9 @@ void loop() {
 
 void sendToThingSpeak(float temp, float press, float hum, float rain) {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi disconnected. Reconnecting...");
     WiFi.reconnect();
     //delay(5000);
     if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("Unable to reconnect to WiFi.");
       return;
     }
   }
@@ -101,14 +94,12 @@ void sendToThingSpeak(float temp, float press, float hum, float rain) {
                "&field3=" + String(hum) +
                "&field4=" + String((int)rain);  // Cast to int for safety
 
-  Serial.println("URL: " + url);
   http.begin(url);
 
   int httpResponseCode = http.GET();
 
   if (httpResponseCode > 0) {
     String response = http.getString();
-    Serial.println("ThingSpeak response: " + response);
   } else {
     Serial.println("ThingSpeak error: " + String(httpResponseCode));
   }

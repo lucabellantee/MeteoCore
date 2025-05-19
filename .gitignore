@@ -1,7 +1,7 @@
 secrets.h
 .env
 zephyr-env.cmd
-/Server/node_modules/
+/Utils/Server/node_modules/
 /build
 *.csv
 
