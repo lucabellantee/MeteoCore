@@ -1,61 +1,73 @@
-# Comandi Spin per l'analisi di modelli Promela
+# Spin Commands for Promela Model Analysis
 
-Questo documento descrive i comandi principali utilizzati per l'analisi di modelli Promela con lo strumento Spin tramite un container Docker.
+This document describes the main commands used to analyze Promela models with the Spin tool via a Docker container.
 
-## Comandi principali
+## Main Commands
 
-### Buildare il container
+### Build the container
+
 ```bash
 docker build -t spin .
 ```
-Questo comando crea un'immagine Docker chiamata "myspin" basata sul Dockerfile presente nella directory corrente. L'immagine contiene l'ambiente necessario per eseguire Spin, inclusi tutti i pacchetti e le dipendenze richieste.
+This command creates a Docker image named "spin" based on the Dockerfile in the current directory. The image contains the environment needed to run Spin, including all required packages and dependencies.
 
-### Avviare ed entrare dentro il container
+### Start and enter the container
+
 ```bash
 docker run -it --rm -v "%cd%:/work" spin
 ```
-Questo comando avvia un container basato sull'immagine "myspin", monta la directory corrente del sistema host nella directory "/work" all'interno del container, e fornisce un terminale interattivo. L'opzione `--rm` assicura che il container venga rimosso automaticamente quando viene chiuso.
 
-### Generare il verificatore
+This command runs a container from the "spin" image, mounts the current host directory into the container’s "/work" directory, and provides an interactive terminal. The `--rm` option ensures the container is automatically removed when closed.
+
+### Generate the verifier
+
 ```bash
 spin -a test_main.pml
 ```
-Questo comando analizza il modello Promela (test_main.pml) e genera diversi file sorgente C (pan.c, pan.h, ecc.) che implementano un verificatore specifico per il modello. Questo verificatore è personalizzato per le caratteristiche del modello analizzato.
+This command analyzes the Promela model (test_main.pml) and generates several C source files (pan.c, pan.h, etc.) that implement a verifier specific to the model. This verifier is tailored to the model’s features.
 
-### Compilare ed eseguire il verificatore
+### Compile and run the verifier
+
 ```bash
 gcc -o pan pan.c
 ./pan
 ```
-Il primo comando compila il file pan.c, generando un eseguibile chiamato "pan". Il secondo comando esegue il verificatore. Questo verificatore controlla automaticamente la presenza di deadlock, assertion violations e altri problemi nel modello. Se non vengono specificati parametri, esegue una verifica di base.
+The first command compiles the pan.c file, creating an executable called pan. The second runs the verifier, which automatically checks for deadlocks, assertion violations, and other issues in the model. Without additional parameters, it performs a basic verification.
 
-### Eseguire una verifica specifica per deadlock
+### Run a deadlock-specific verification
+
 ```bash
 ./pan -d
 ```
-Questo comando esegue il verificatore concentrandosi specificamente sulla ricerca di deadlock (stati finali non validi). L'opzione `-d` attiva la verifica dei deadlock e mostra dettagli su tutti i possibili stati e transizioni del modello.
 
-## Comandi aggiuntivi utili
+This runs the verifier focusing specifically on detecting deadlocks (invalid end states). The `-d` option enables deadlock detection and shows details about all possible states and transitions.
 
-### Verifica di starvation (non-progress cycles)
+## Additional Useful Commands
+
+### Starvation check (non-progress cycles)
+
 ```bash
 gcc -DNP -o pan pan.c
 ./pan -l -f
 ```
-Compila il verificatore con il flag `-DNP` e lo esegue per cercare cicli di non-progresso, che possono indicare situazioni di starvation (un processo non ottiene mai le risorse necessarie).
 
+Compiles the verifier with the `-DNP` flag and runs it to detect non-progress cycles, which may indicate starvation situations (a process never acquiring needed resources).
 
-### Verifica delle proprietà LTL specifiche
+### Verify specific LTL properties
+
 ```bash
 spin -run -ltl deadlock_free test_main.pml
 ```
-Verifica una specifica proprietà LTL definita nel modello (in questo caso, "deadlock_free").
+
+Checks a specific LTL property defined in the model (in this case, "deadlock_free").
 
 
-### Analisi completa con salvataggio dei risultati
+### Full analysis with results saved
+
 ```bash
 spin -a test_main.pml
 gcc -DSAFETY -o pan pan.c
 ./pan -d -v > analysis_results.txt 2>&1
 ```
-Esegue un'analisi completa e salva i risultati in un file di testo per revisione futura.
+
+Performs a complete analysis and saves the output to a text file for later review.
