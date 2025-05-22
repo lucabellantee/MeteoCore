@@ -61,6 +61,8 @@ L'ESP32-WROOM-32E funge da gateway per inviare i dati dal sistema embedded alla 
     ```bash
     zephyr-env.cmd
     ```
+    Il percorso in cui si trova il file `activate.bat` potrebbe variare da un dispositivo all'altro. Inoltre, prima di eseguire il comando `zephyr-env.cmd`, è necessario impostare le variabili `ZEPHYR_BASE` e `ZEPHYR_SDK_INSTALL_DIR` rispettivamente con il percorso base di Zephyr e con il percorso della SDK.
+
 
 3. Compila il progetto per la board **STM32F446RE**:
 
