@@ -1,9 +1,9 @@
 FROM ubuntu:22.04
 
-# Evita prompt interattivi durante l'installazione
+# Avoid interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Aggiorna il sistema e installa le dipendenze necessarie
+# Update the system and install the required dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     wget \
@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     graphviz \ 
     && rm -rf /var/lib/apt/lists/*
 
-# Scarica e compila Spin
+# load and compile Spin
 WORKDIR /tmp
 RUN wget https://github.com/nimble-code/Spin/archive/refs/tags/version-6.5.2.tar.gz \
     && tar -xzf version-6.5.2.tar.gz \
@@ -24,7 +24,7 @@ RUN wget https://github.com/nimble-code/Spin/archive/refs/tags/version-6.5.2.tar
     && cd / \
     && rm -rf /tmp/version-6.5.2.tar.gz /tmp/Spin-version-6.5.2
 
-# Imposta la directory di lavoro
+# Set the working directory
 WORKDIR /work
 
 CMD ["/bin/bash"]
