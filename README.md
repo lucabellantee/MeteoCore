@@ -152,7 +152,7 @@ The model is **static** (hardcoded in the STM32 firmware) and currently **does n
 This project is developed and maintained by the following authors:
 
 - **Zazzarini Micol** - [GitHub Profile](https://github.com/MicolZazzarini)
-- **Bellante Luca** - [GitHub Profile](https://github.com/lucabellantee))
+- **Bellante Luca** - [GitHub Profile](https://github.com/lucabellantee)
 
 
 ---
